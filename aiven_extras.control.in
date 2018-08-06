@@ -1,0 +1,5 @@
+comment = 'aiven_extras'
+default_version = '__short_ver__'
+relocatable = false
+requires = 'dblink'
+schema = 'aiven_extras'
