@@ -1,5 +1,4 @@
 %global sname   aiven-extras
-%global pgmajorversion  10
 
 Name:           %{sname}_%{pgmajorversion}
 Version:        %{major_version}
