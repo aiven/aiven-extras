@@ -1,6 +1,6 @@
 %global sname   aiven-extras
 
-Name:           %{sname}_%{pgmajorversion}
+Name:           %{sname}_%{packagenameversion}
 Version:        %{major_version}
 Release:        %{minor_version}%{?dist}
 Url:            http://github.com/aiven/aiven-extras
