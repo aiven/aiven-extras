@@ -20,7 +20,8 @@ rpm-%: $(generated)
 	rpmbuild -bb aiven-extras.spec \
 		--define '_topdir $(PWD)/rpm' \
 		--define '_sourcedir $(CURDIR)' \
-		--define "pgmajorversion $(subst .,,$(subst rpm-,,$@))" \
+		--define "packagenameversion $(subst .,,$(subst rpm-,,$@))" \
+		--define "pgmajorversion $(subst rpm-,,$@)" \
 		--define 'major_version $(short_ver)' \
 		--define 'minor_version $(subst -,.,$(subst $(short_ver)-,,$(long_ver)))'
 	$(RM) aiven-extras-rpm-src.tar
