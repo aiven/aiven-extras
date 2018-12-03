@@ -89,9 +89,23 @@ END;
 $$ SECURITY DEFINER;
 
 
+CREATE TYPE aiven_pg_subscription AS (
+    subdbid OID,
+    subname NAME,
+    subowner OID,
+    subenabled BOOLEAN,
+    subconninfo TEXT,
+    subslotname NAME,
+    subsynccommit TEXT,
+    subpublications TEXT[]
+);
+
+-- In PLPGSQL instead of SQL so we can create the function on pre-PG10
 CREATE FUNCTION pg_list_all_subscriptions()
-RETURNS SETOF pg_subscription LANGUAGE sql AS $$
-    SELECT * FROM pg_catalog.pg_subscription;
+RETURNS SETOF aiven_pg_subscription LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY SELECT subdbid, subname, subowner, subenabled, subconninfo, subslotname, subsynccommit, subpublications FROM pg_catalog.pg_subscription;
+END;
 $$ SECURITY DEFINER;
 
 
