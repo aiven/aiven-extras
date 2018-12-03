@@ -2,7 +2,7 @@ short_ver = 1.0.0
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = aiven_extras.control aiven_extras--$(short_ver).sql
 
-rpm: rpm-10 rpm-11
+rpm: rpm-9.6 rpm-10 rpm-11
 
 clean:
 	rm -rf rpm aiven-extras-rpm-src.tar $(generated)
