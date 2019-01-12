@@ -229,3 +229,11 @@ BEGIN
     RETURN curr_val;
 END
 $$ SECURITY DEFINER;
+
+
+CREATE FUNCTION claim_public_schema_ownership()
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+    EXECUTE format('ALTER SCHEMA public OWNER TO %I', session_user);
+END;
+$$ SECURITY DEFINER;
