@@ -237,3 +237,45 @@ BEGIN
     EXECUTE format('ALTER SCHEMA public OWNER TO %I', session_user);
 END;
 $$ SECURITY DEFINER;
+
+
+CREATE TYPE aiven_pg_stat_replication AS (
+    pid INT,
+    usesysid OID,
+    usename NAME,
+    application_name TEXT,
+    client_addr INET,
+    client_hostname TEXT,
+    client_port INT,
+    backend_start TIMESTAMP WITH TIME ZONE,
+    backend_xmin XID,
+    state TEXT,
+    sent_lsn PG_LSN,
+    write_lsn PG_LSN,
+    flush_lsn PG_LSN,
+    replay_lsn PG_LSN,
+    write_lag INTERVAL,
+    flush_lag INTERVAL,
+    replay_lag INTERVAL,
+    sync_priority INTEGER,
+    sync_state TEXT
+);
+
+
+CREATE FUNCTION pg_stat_replication_list()
+RETURNS SETOF aiven_pg_stat_replication LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY EXECUTE format('SELECT pid, usesysid, usename, application_name, client_addr, client_hostname, client_port,
+                                     backend_start, backend_xmin, state, sent_lsn, write_lsn, flush_lsn, replay_lsn, write_lag,
+                                     flush_lag, replay_lag, sync_priority, sync_state
+                                     FROM pg_catalog.pg_stat_replication
+                                     WHERE usename = %L::NAME', session_user);
+END;
+$$ SECURITY DEFINER;
+
+
+CREATE VIEW pg_stat_replication AS
+    SELECT pid, usesysid, usename, application_name, client_addr, client_hostname, client_port,
+        backend_start, backend_xmin, state, sent_lsn, write_lsn, flush_lsn, replay_lsn, write_lag,
+        flush_lag, replay_lag, sync_priority, sync_state
+	FROM pg_stat_replication_list();
