@@ -32,7 +32,7 @@ The functions included are:
 
     $ SELECT * FROM aiven_extras.pg_create_subscription(
           'subscription',
-          'dbname=defaultdb host=destination-demoprj.aivencloud.com port=26882 sslmode=require user=avnadmin password=pk0o6n5h413bdis7',
+          'dbname=defaultdb host=destination-demoprj.aivencloud.com port=26882 sslmode=require user=avnadmin password=secret',
           'pub1',
           'slot',
           TRUE,
