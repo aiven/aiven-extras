@@ -51,6 +51,20 @@ The functions included are:
 
     $ SELECT * FROM aiven_extras.pg_create_publication_for_all_tables('pub1', 'INSERT');
 
+    pg_alter_subscription_disable(arg_subscription_name TEXT)
+
+    $ SELECT * FROM aiven_extras.pg_alter_subscription_disable('subscription');
+
+    pg_alter_subscription_enable(arg_subscription_name TEXT)
+
+    $ SELECT * FROM aiven_extras.pg_alter_subscription_enable('subscription');
+
+    pg_alter_subscription_refresh_publication(
+        arg_subscription_name TEXT,
+        arg_copy_data BOOLEAN = TRUE
+    )
+
+    $ SELECT * FROM aiven_extras.pg_alter_subscription_refresh_publication('subscription', FALSE);
 
 License
 =======
