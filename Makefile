@@ -1,8 +1,10 @@
-short_ver = 1.0.3
+short_ver = 1.1.0
+last_ver = 1.0.3
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = \
 	build/aiven_extras.control \
-	build/sql/aiven_extras--$(short_ver).sql
+	build/sql/aiven_extras--$(short_ver).sql \
+	build/sql/aiven_extras--$(last_ver)--$(short_ver).sql
 
 rpm: rpm-9.6 rpm-10 rpm-11 rpm-12
 
@@ -14,6 +16,10 @@ build/aiven_extras.control: aiven_extras.control.in
 	sed -e 's,__short_ver__,$(short_ver),g' < $^ > $@
 
 build/sql/aiven_extras--$(short_ver).sql: sql/aiven_extras.sql
+	mkdir -p $(@D)
+	cp -fp $^ $@
+
+build/sql/aiven_extras--$(last_ver)--$(short_ver).sql: sql/aiven_extras.sql
 	mkdir -p $(@D)
 	cp -fp $^ $@
 
