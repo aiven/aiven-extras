@@ -2,7 +2,7 @@ DO $$
 BEGIN
     PERFORM 1 FROM pg_catalog.pg_type WHERE typnamespace = 'aiven_extras'::regnamespace AND typname = 'aiven_pg_subscription';
     IF NOT FOUND THEN
-        CREATE TYPE aiven_pg_subscription AS (
+        CREATE TYPE aiven_extras.aiven_pg_subscription AS (
             subdbid OID,
             subname NAME,
             subowner OID,
@@ -15,7 +15,7 @@ BEGIN
     END IF;
     PERFORM 1 FROM pg_catalog.pg_type WHERE typnamespace = 'aiven_extras'::regnamespace AND typname = 'aiven_pg_stat_replication';
     IF NOT FOUND THEN
-        CREATE TYPE aiven_pg_stat_replication AS (
+        CREATE TYPE aiven_extras.aiven_pg_stat_replication AS (
             pid INT,
             usesysid OID,
             usename NAME,
@@ -41,12 +41,15 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.dblink_slot_create_or_drop(
+DROP FUNCTION IF EXISTS aiven_extras.dblink_slot_create_or_drop(TEXT, TEXT, TEXT);
+CREATE FUNCTION aiven_extras.dblink_slot_create_or_drop(
     arg_connection_string TEXT,
     arg_slot_name TEXT,
     arg_action TEXT
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 DECLARE
     l_slot_existence_query TEXT := pg_catalog.format('SELECT TRUE FROM pg_catalog.pg_replication_slots WHERE slot_name = %L', arg_slot_name);
     l_slot_action_query TEXT;
@@ -75,10 +78,10 @@ BEGIN
     END IF;
 END;
 $$;
-ALTER FUNCTION aiven_extras.dblink_slot_create_or_drop(TEXT, TEXT, TEXT) SET search_path = aiven_extras;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.pg_create_subscription(
+DROP FUNCTION IF EXISTS aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN);
+CREATE FUNCTION aiven_extras.pg_create_subscription(
     arg_subscription_name TEXT,
     arg_connection_string TEXT,
     arg_publication_name TEXT,
@@ -86,9 +89,10 @@ CREATE OR REPLACE FUNCTION aiven_extras.pg_create_subscription(
     arg_slot_create BOOLEAN = FALSE,
     arg_copy_data BOOLEAN = TRUE
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
-DECLARE
-    l_slot_create_query TEXT;
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
     IF (arg_slot_create IS TRUE) THEN
         PERFORM aiven_extras.dblink_slot_create_or_drop(arg_connection_string, arg_slot_name, 'create');
@@ -98,59 +102,66 @@ BEGIN
         arg_subscription_name, arg_connection_string, arg_publication_name, arg_slot_name, arg_copy_data::TEXT);
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.pg_alter_subscription_disable(
+DROP FUNCTION IF EXISTS aiven_extras.pg_alter_subscription_disable(TEXT);
+CREATE FUNCTION aiven_extras.pg_alter_subscription_disable(
     arg_subscription_name TEXT
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
     EXECUTE pg_catalog.format('ALTER SUBSCRIPTION %I DISABLE', arg_subscription_name);
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_alter_subscription_disable(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_alter_subscription_disable(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.pg_alter_subscription_enable(
+DROP FUNCTION IF EXISTS aiven_extras.pg_alter_subscription_enable(TEXT);
+CREATE FUNCTION aiven_extras.pg_alter_subscription_enable(
     arg_subscription_name TEXT
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
     EXECUTE pg_catalog.format('ALTER SUBSCRIPTION %I ENABLE', arg_subscription_name);
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_alter_subscription_enable(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_alter_subscription_enable(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(
+DROP FUNCTION IF EXISTS aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN);
+CREATE FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(
     arg_subscription_name TEXT,
     arg_copy_data BOOLEAN = TRUE
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
     EXECUTE pg_catalog.format(
         'ALTER SUBSCRIPTION %I REFRESH PUBLICATION WITH (copy_data=%s)',
         arg_subscription_name, arg_copy_data::TEXT);
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) SECURITY DEFINER;
 
-
-CREATE OR REPLACE FUNCTION aiven_extras.pg_drop_subscription(
+DROP FUNCTION IF EXISTS aiven_extras.pg_drop_subscription(TEXT);
+CREATE FUNCTION aiven_extras.pg_drop_subscription(
     arg_subscription_name TEXT
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 DECLARE
-    l_slot_drop_query TEXT;
     l_slot_name TEXT;
     l_subconninfo TEXT;
 BEGIN
-    SELECT subslotname, subconninfo INTO l_slot_name, l_subconninfo
+    SELECT subslotname, subconninfo
+        INTO l_slot_name, l_subconninfo
         FROM pg_catalog.pg_subscription
         WHERE subname = arg_subscription_name;
     IF l_slot_name IS NULL AND l_subconninfo IS NULL THEN
@@ -162,204 +173,216 @@ BEGIN
     PERFORM aiven_extras.dblink_slot_create_or_drop(l_subconninfo, l_slot_name, 'drop');
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_drop_subscription(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_drop_subscription(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.pg_create_publication_for_all_tables(
+DROP FUNCTION IF EXISTS aiven_extras.pg_create_publication_for_all_tables(TEXT, TEXT);
+CREATE FUNCTION aiven_extras.pg_create_publication_for_all_tables(
     arg_publication_name TEXT,
     arg_publish TEXT
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
     EXECUTE pg_catalog.format('CREATE PUBLICATION %I FOR ALL TABLES WITH (publish = %I)', arg_publication_name, arg_publish);
     EXECUTE pg_catalog.format('ALTER PUBLICATION %I OWNER TO %I', arg_publication_name, session_user);
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_create_publication_for_all_tables(TEXT, TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_create_publication_for_all_tables(TEXT, TEXT) SECURITY DEFINER;
 
-
--- In PLPGSQL instead of SQL so we can create the function on pre-PG10
-CREATE OR REPLACE FUNCTION aiven_extras.pg_list_all_subscriptions()
-RETURNS SETOF aiven_pg_subscription LANGUAGE plpgsql AS $$
+DROP FUNCTION IF EXISTS aiven_extras.pg_list_all_subscriptions();
+CREATE FUNCTION aiven_extras.pg_list_all_subscriptions()
+RETURNS SETOF aiven_extras.aiven_pg_subscription LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
     RETURN QUERY
         SELECT subdbid, subname, subowner, subenabled, subconninfo, subslotname, subsynccommit, subpublications
             FROM pg_catalog.pg_subscription;
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_list_all_subscriptions() SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_list_all_subscriptions() SECURITY DEFINER;
 
 
---Adapted from comment by C. Keane at https://forums.aws.amazon.com/thread.jspa?messageID=561509#jive-message-527767
-
-CREATE OR REPLACE FUNCTION aiven_extras.session_replication_role(
-    role TEXT
+DROP FUNCTION IF EXISTS aiven_extras.session_replication_role(TEXT);
+CREATE FUNCTION aiven_extras.session_replication_role(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET session_replication_role = ' || pg_catalog.quote_literal(role);
-    EXECUTE 'SHOW session_replication_role' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('session_replication_role', arg_role, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.session_replication_role(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.session_replication_role(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.auto_explain_load()
-RETURNS VOID LANGUAGE plpgsql AS $$
+DROP FUNCTION IF EXISTS aiven_extras.auto_explain_load();
+CREATE FUNCTION aiven_extras.auto_explain_load()
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE pg_catalog.format('LOAD %L', 'auto_explain');
+    LOAD 'auto_explain';
 END;
 $$;
-ALTER FUNCTION aiven_extras.auto_explain_load() SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.auto_explain_load() SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.set_auto_explain_log_analyze(
-    parameter TEXT
+DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_analyze(TEXT);
+CREATE FUNCTION aiven_extras.set_auto_explain_log_analyze(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET auto_explain.log_analyze = ' || pg_catalog.quote_literal(parameter);
-    EXECUTE 'SHOW auto_explain.log_analyze' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('auto_explain.log_analyze', arg_parameter, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_analyze(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_analyze(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.set_auto_explain_log_format(
-    parameter TEXT
+DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_format(TEXT);
+CREATE FUNCTION aiven_extras.set_auto_explain_log_format(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET auto_explain.log_format = ' || pg_catalog.quote_literal(parameter);
-    EXECUTE 'SHOW auto_explain.log_format' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('auto_explain.log_format', arg_parameter, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_format(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_format(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.set_auto_explain_log_min_duration(
-    parameter TEXT
+DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_min_duration(TEXT);
+CREATE FUNCTION aiven_extras.set_auto_explain_log_min_duration(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET auto_explain.log_min_duration = ' || pg_catalog.quote_literal(parameter);
-    EXECUTE 'SHOW auto_explain.log_min_duration' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('auto_explain.log_min_duration', arg_parameter, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_min_duration(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_min_duration(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.set_auto_explain_log_timing(
-    parameter TEXT
+DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_timing(TEXT);
+CREATE FUNCTION aiven_extras.set_auto_explain_log_timing(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET auto_explain.log_timing = ' || pg_catalog.quote_literal(parameter);
-    EXECUTE 'SHOW auto_explain.log_timing' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('auto_explain.log_timing', arg_parameter, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_timing(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_timing(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.set_auto_explain_log_buffers(
-    parameter TEXT
+DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_buffers(TEXT);
+CREATE FUNCTION aiven_extras.set_auto_explain_log_buffers(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET auto_explain.log_buffers = ' || pg_catalog.quote_literal(parameter);
-    EXECUTE 'SHOW auto_explain.log_buffers' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('auto_explain.log_buffers', arg_parameter, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_buffers(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_buffers(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.set_auto_explain_log_verbose(
-    parameter TEXT
+DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_verbose(TEXT);
+CREATE FUNCTION aiven_extras.set_auto_explain_log_verbose(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET auto_explain.log_verbose = ' || pg_catalog.quote_literal(parameter);
-    EXECUTE 'SHOW auto_explain.log_verbose' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('auto_explain.log_verbose', arg_parameter, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_verbose(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_verbose(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.set_auto_explain_log_nested_statements(
-    parameter TEXT
+DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_nested_statements(TEXT);
+CREATE FUNCTION aiven_extras.set_auto_explain_log_nested_statements(
+    arg_parameter TEXT
 )
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    curr_val text := 'unset';
+RETURNS TEXT LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    EXECUTE 'SET auto_explain.log_nested_statements = ' || pg_catalog.quote_literal(parameter);
-    EXECUTE 'SHOW auto_explain.log_nested_statements' INTO curr_val;
-    RETURN curr_val;
+    RETURN pg_catalog.set_config('auto_explain.log_nested_statements', arg_parameter, false);
 END
 $$;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_nested_statements(TEXT) SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.set_auto_explain_log_nested_statements(TEXT) SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.claim_public_schema_ownership()
-RETURNS VOID LANGUAGE plpgsql AS $$
+DROP FUNCTION IF EXISTS aiven_extras.claim_public_schema_ownership();
+CREATE FUNCTION aiven_extras.claim_public_schema_ownership()
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
     EXECUTE pg_catalog.format('ALTER SCHEMA public OWNER TO %I', session_user);
 END;
 $$;
-ALTER FUNCTION aiven_extras.claim_public_schema_ownership() SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.claim_public_schema_ownership() SECURITY DEFINER;
 
 
-CREATE OR REPLACE FUNCTION aiven_extras.pg_stat_replication_list()
-RETURNS SETOF aiven_pg_stat_replication LANGUAGE plpgsql AS $$
+-- Temporarily clear out the view so we can replace the function behind it
+CREATE OR REPLACE VIEW aiven_extras.pg_stat_replication AS
+    SELECT
+        NULL::INT AS pid,
+        NULL::OID AS usesysid,
+        NULL::NAME AS usename,
+        NULL::TEXT AS application_name,
+        NULL::INET AS client_addr,
+        NULL::TEXT AS client_hostname,
+        NULL::INT AS client_port,
+        NULL::TIMESTAMPTZ AS backend_start,
+        NULL::XID AS backend_xmin,
+        NULL::TEXT AS state,
+        NULL::PG_LSN AS sent_lsn,
+        NULL::PG_LSN AS write_lsn,
+        NULL::PG_LSN AS flush_lsn,
+        NULL::PG_LSN AS replay_lsn,
+        NULL::INTERVAL AS write_lag,
+        NULL::INTERVAL AS flush_lag,
+        NULL::INTERVAL AS replay_lag,
+        NULL::INTEGER AS sync_priority,
+        NULL::TEXT AS sync_state;
+
+
+DROP FUNCTION IF EXISTS aiven_extras.pg_stat_replication_list();
+CREATE FUNCTION aiven_extras.pg_stat_replication_list()
+RETURNS SETOF aiven_extras.aiven_pg_stat_replication LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = aiven_extras, pg_catalog, pg_temp
+AS $$
 BEGIN
-    RETURN QUERY EXECUTE pg_catalog.format(
-        'SELECT pid, usesysid, usename, application_name, client_addr, client_hostname, client_port,
+    RETURN QUERY
+        SELECT  pid, usesysid, usename, application_name, client_addr, client_hostname, client_port,
                 backend_start, backend_xmin, state, sent_lsn, write_lsn, flush_lsn, replay_lsn, write_lag,
                 flush_lag, replay_lag, sync_priority, sync_state
             FROM pg_catalog.pg_stat_replication
-            WHERE usename = %L::NAME', session_user);
+            WHERE usename = session_user;
 END;
 $$;
-ALTER FUNCTION aiven_extras.pg_stat_replication_list() SET search_path = aiven_extras;
-ALTER FUNCTION aiven_extras.pg_stat_replication_list() SECURITY DEFINER;
 
 
 CREATE OR REPLACE VIEW aiven_extras.pg_stat_replication AS
-    SELECT pid, usesysid, usename, application_name, client_addr, client_hostname, client_port,
-        backend_start, backend_xmin, state, sent_lsn, write_lsn, flush_lsn, replay_lsn, write_lag,
-        flush_lag, replay_lag, sync_priority, sync_state
-	FROM aiven_extras.pg_stat_replication_list();
+        SELECT  pid, usesysid, usename, application_name, client_addr, client_hostname, client_port,
+                backend_start, backend_xmin, state, sent_lsn, write_lsn, flush_lsn, replay_lsn, write_lag,
+                flush_lag, replay_lag, sync_priority, sync_state
+            FROM aiven_extras.pg_stat_replication_list();
