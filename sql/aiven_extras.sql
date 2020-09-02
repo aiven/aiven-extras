@@ -1,44 +1,60 @@
-DO $$
+DO LANGUAGE plpgsql
+$OUTER$
+DECLARE
+    my_schema pg_catalog.TEXT := pg_catalog.quote_ident(pg_catalog.current_schema());
+    old_path pg_catalog.TEXT := pg_catalog.current_setting('search_path');
 BEGIN
-    PERFORM 1 FROM pg_catalog.pg_type WHERE typnamespace = 'aiven_extras'::regnamespace AND typname = 'aiven_pg_subscription';
-    IF NOT FOUND THEN
-        CREATE TYPE aiven_extras.aiven_pg_subscription AS (
-            subdbid OID,
-            subname NAME,
-            subowner OID,
-            subenabled BOOLEAN,
-            subconninfo TEXT,
-            subslotname NAME,
-            subsynccommit TEXT,
-            subpublications TEXT[]
-        );
-    END IF;
-    PERFORM 1 FROM pg_catalog.pg_type WHERE typnamespace = 'aiven_extras'::regnamespace AND typname = 'aiven_pg_stat_replication';
-    IF NOT FOUND THEN
-        CREATE TYPE aiven_extras.aiven_pg_stat_replication AS (
-            pid INT,
-            usesysid OID,
-            usename NAME,
-            application_name TEXT,
-            client_addr INET,
-            client_hostname TEXT,
-            client_port INT,
-            backend_start TIMESTAMP WITH TIME ZONE,
-            backend_xmin XID,
-            state TEXT,
-            sent_lsn PG_LSN,
-            write_lsn PG_LSN,
-            flush_lsn PG_LSN,
-            replay_lsn PG_LSN,
-            write_lag INTERVAL,
-            flush_lag INTERVAL,
-            replay_lag INTERVAL,
-            sync_priority INTEGER,
-            sync_state TEXT
-        );
-    END IF;
-END;
-$$;
+
+-- for safety, transiently set search_path to just pg_catalog+pg_temp
+PERFORM pg_catalog.set_config('search_path', 'pg_catalog, pg_temp', true);
+
+
+PERFORM 1
+    FROM pg_catalog.pg_type AS t JOIN pg_catalog.pg_roles AS r ON (r.oid = t.typowner)
+    WHERE r.rolsuper
+        AND t.typnamespace = 'aiven_extras'::regnamespace
+        AND t.typname = 'aiven_pg_subscription';
+IF NOT FOUND THEN
+    CREATE TYPE aiven_extras.aiven_pg_subscription AS (
+        subdbid OID,
+        subname NAME,
+        subowner OID,
+        subenabled BOOLEAN,
+        subconninfo TEXT,
+        subslotname NAME,
+        subsynccommit TEXT,
+        subpublications TEXT[]
+    );
+END IF;
+
+PERFORM 1
+    FROM pg_catalog.pg_type AS t JOIN pg_catalog.pg_roles AS r ON (r.oid = t.typowner)
+    WHERE r.rolsuper
+        AND typnamespace = 'aiven_extras'::regnamespace
+        AND typname = 'aiven_pg_stat_replication';
+IF NOT FOUND THEN
+    CREATE TYPE aiven_extras.aiven_pg_stat_replication AS (
+        pid INT,
+        usesysid OID,
+        usename NAME,
+        application_name TEXT,
+        client_addr INET,
+        client_hostname TEXT,
+        client_port INT,
+        backend_start TIMESTAMP WITH TIME ZONE,
+        backend_xmin XID,
+        state TEXT,
+        sent_lsn PG_LSN,
+        write_lsn PG_LSN,
+        flush_lsn PG_LSN,
+        replay_lsn PG_LSN,
+        write_lag INTERVAL,
+        flush_lag INTERVAL,
+        replay_lag INTERVAL,
+        sync_priority INTEGER,
+        sync_state TEXT
+    );
+END IF;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.dblink_slot_create_or_drop(TEXT, TEXT, TEXT);
@@ -386,3 +402,8 @@ CREATE OR REPLACE VIEW aiven_extras.pg_stat_replication AS
                 backend_start, backend_xmin, state, sent_lsn, write_lsn, flush_lsn, replay_lsn, write_lag,
                 flush_lag, replay_lag, sync_priority, sync_state
             FROM aiven_extras.pg_stat_replication_list();
+
+
+PERFORM pg_catalog.set_config('search_path', old_path, true);
+END;
+$OUTER$;
