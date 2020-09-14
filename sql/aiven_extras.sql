@@ -74,14 +74,15 @@ RETURNS VOID LANGUAGE plpgsql
 SET search_path = aiven_extras, pg_catalog, pg_temp
 AS $$
 DECLARE
-    l_slot_existence_query TEXT := pg_catalog.format('SELECT TRUE FROM pg_catalog.pg_replication_slots WHERE slot_name = %L', arg_slot_name);
+    l_clear_search_path TEXT := 'SET search_path TO pg_catalog, pg_temp;';
+    l_slot_existence_query TEXT := pg_catalog.format('SELECT TRUE FROM pg_catalog.pg_replication_slots WHERE slot_name OPERATOR(pg_catalog.=) %L', arg_slot_name);
     l_slot_action_query TEXT;
     l_slot_exists BOOLEAN;
 BEGIN
     SELECT res INTO l_slot_exists
         FROM aiven_extras.dblink_record_execute(
                 arg_connection_string,
-                l_slot_existence_query
+                l_clear_search_path || l_slot_existence_query
             ) AS d (res BOOLEAN);
     IF arg_action = 'create' AND l_slot_exists IS NOT TRUE THEN
         l_slot_action_query := pg_catalog.format('SELECT TRUE FROM pg_catalog.pg_create_logical_replication_slot(%L, %L, FALSE)', arg_slot_name, 'pgoutput');
@@ -92,7 +93,7 @@ BEGIN
         PERFORM 1
             FROM aiven_extras.dblink_record_execute(
                     arg_connection_string,
-                    l_slot_action_query
+                    l_clear_search_path || l_slot_action_query
                 ) AS d (res BOOLEAN);
     END IF;
 END;
