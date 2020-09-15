@@ -13,8 +13,7 @@ Installation
 
 To create the Aiven extras extension run:
 
-    $ CREATE EXTENSION aiven_extras CASCADE;
-    NOTICE:  installing required extension "dblink"
+    $ CREATE EXTENSION aiven_extras;
     CREATE EXTENSION
 
 Usage
