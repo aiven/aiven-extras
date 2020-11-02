@@ -233,7 +233,7 @@ SECURITY DEFINER
 SET search_path = aiven_extras, pg_catalog, pg_temp
 AS $$
 BEGIN
-    RETURN pg_catalog.set_config('session_replication_role', arg_role, false);
+    RETURN pg_catalog.set_config('session_replication_role', arg_parameter, false);
 END
 $$;
 
