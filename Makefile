@@ -6,7 +6,7 @@ generated = \
 	build/sql/aiven_extras--$(short_ver).sql \
 	build/sql/aiven_extras--$(last_ver)--$(short_ver).sql
 
-rpm: rpm-9.6 rpm-10 rpm-11 rpm-12
+rpm: rpm-9.6 rpm-10 rpm-11 rpm-12 rpm-13
 
 clean:
 	rm -rf build/ rpm/ aiven-extras-rpm-src.tar
