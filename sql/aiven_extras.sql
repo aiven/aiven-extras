@@ -410,4 +410,46 @@ CREATE OR REPLACE VIEW aiven_extras.pg_stat_replication AS
 
 PERFORM pg_catalog.set_config('search_path', old_path, true);
 END;
+
+
+DROP FUNCTION IF EXISTS aiven_extras.pg_create_publication;
+CREATE FUNCTION aiven_extras.pg_create_publication(
+    arg_publication_name TEXT,
+    arg_publish TEXT,
+    VARIADIC arg_tables TEXT[] DEFAULT ARRAY[]::TEXT[]
+)
+RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE
+  l_ident TEXT;
+  l_table_count INT;
+  l_tables_command TEXT;
+  l_parsed_ident TEXT[];
+  l_parsed_arg_tables TEXT[];
+BEGIN
+    l_table_count = array_length(arg_tables, 1);
+    IF l_table_count >= 1
+    THEN
+        l_parsed_arg_tables = ARRAY[]::TEXT[];
+        l_tables_command = 'CREATE PUBLICATION %I FOR TABLE ';
+        FOREACH l_ident IN ARRAY arg_tables LOOP
+            l_parsed_ident = parse_ident(l_ident);
+            ASSERT array_length(l_parsed_ident, 1) <= 2, 'Only simple table names or tables qualified with schema names allowed';
+            -- Make sure we pass in a simple list of identifiers, so separate the tables from parent schemas
+            IF array_length(l_parsed_ident, 1) = 2
+            THEN
+                l_tables_command = l_tables_command || '%I.%I, ';
+            ELSE
+                l_tables_command = l_tables_command || '%I, ';
+            END IF;
+            l_parsed_arg_tables = l_parsed_arg_tables || l_parsed_ident;
+        END LOOP;
+        -- Remove trailing comma and whitespace, add the rest
+        l_tables_command = left(l_tables_command, -2) || ' WITH (publish = %I)';
+        EXECUTE format(l_tables_command, VARIADIC array[arg_publication_name] || l_parsed_arg_tables || arg_publish);
+    ELSE
+        EXECUTE format('CREATE PUBLICATION %I WITH (publish = %I)', arg_publication_name, arg_publish);
+    END IF;
+    EXECUTE format('ALTER PUBLICATION %I OWNER TO %I', arg_publication_name, session_user);
+END;
+$$;
 $OUTER$;
