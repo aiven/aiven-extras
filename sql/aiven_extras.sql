@@ -417,9 +417,10 @@ CREATE FUNCTION aiven_extras.pg_create_publication(
     arg_publish TEXT,
     VARIADIC arg_tables TEXT[] DEFAULT ARRAY[]::TEXT[]
 )
-RETURNS VOID LANGUAGE plpgsql AS $$
+RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, pg_temp, aiven_extras
+AS $$
 DECLARE
   l_ident TEXT;
   l_table_count INT;
