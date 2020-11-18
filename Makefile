@@ -37,3 +37,6 @@ rpm-%: $(generated)
 		--define 'major_version $(short_ver)' \
 		--define 'minor_version $(subst -,.,$(subst $(short_ver)-,,$(long_ver)))'
 	$(RM) aiven-extras-rpm-src.tar
+
+tests:
+	./test/check-sql.sh
