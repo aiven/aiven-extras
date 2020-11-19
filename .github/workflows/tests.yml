@@ -1,0 +1,23 @@
+name: SQL Syntax check
+
+on: [push, pull_request]
+
+jobs:
+  sql-test:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install PG
+      run: sudo apt install -y postgresql
+
+    - name: Enable trust auth
+      run: echo "local all all      trust" | sudo tee /etc/postgresql/13/main/pg_hba.conf
+
+    - name: (Re)start PG server
+      run: sudo service postgresql restart
+
+    - name: Load SQL
+      run: make tests
