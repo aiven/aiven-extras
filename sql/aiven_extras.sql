@@ -408,9 +408,6 @@ CREATE OR REPLACE VIEW aiven_extras.pg_stat_replication AS
             FROM aiven_extras.pg_stat_replication_list();
 
 
-PERFORM pg_catalog.set_config('search_path', old_path, true);
-
-
 DROP FUNCTION IF EXISTS aiven_extras.pg_create_publication(TEXT, TEXT, VARIADIC TEXT[]);
 CREATE FUNCTION aiven_extras.pg_create_publication(
     arg_publication_name TEXT,
@@ -454,5 +451,11 @@ BEGIN
     EXECUTE format('ALTER PUBLICATION %I OWNER TO %I', arg_publication_name, session_user);
 END;
 $$;
+
+
+-- THIS LINE ALWAYS NEEDS TO BE EXECUTED LAST IN FILE
+PERFORM pg_catalog.set_config('search_path', old_path, true);
+-- NO MORE CODE AFTER THIS
+
 END;
 $OUTER$;
