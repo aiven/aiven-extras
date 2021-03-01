@@ -8,6 +8,8 @@ SUBSCRIPTION/PUBLICATION concepts or configuring the `auto_explain` extension.
 It allows you to use logical replication when installed originally by root and the
 user using it has the REPLICATION privilege.
 
+Please note that when loading the `auto_explain` extension, it is loaded for the current session only.
+
 Installation
 ============
 
@@ -53,49 +55,37 @@ Examples
 **Managing subscriptions:**
 
 ```sql
-aiven_extras.pg_create_subscription(
-    arg_subscription_name TEXT,
-    arg_connection_string TEXT,
-    arg_publication_name TEXT,
-    arg_slot_name TEXT = NULL
-    arg_slot_create BOOL = FALSE,
-    arg_copy_data BOOL = TRUE);
+-- Create a new subscription
+SELECT * FROM aiven_extras.pg_create_subscription(
+    'subscription',
+    'dbname=defaultdb host=destination-demoprj.aivencloud.com port=26882 sslmode=require user=avnadmin password=secret',
+    'pub1',
+    'slot',
+    TRUE,
+    TRUE
+);
 
-$ SELECT * FROM aiven_extras.pg_create_subscription(
-      'subscription',
-      'dbname=defaultdb host=destination-demoprj.aivencloud.com port=26882 sslmode=require user=avnadmin password=secret',
-      'pub1',
-      'slot',
-      TRUE,
-      TRUE
-  );
+-- List all subscriptions
+SELECT * FROM aiven_extras.pg_list_all_subscriptions();
 
-$ SELECT * FROM aiven_extras.pg_list_all_subscriptions();
+-- Drop a subscription
+SELECT * FROM aiven_extras.pg_drop_subscription('subscription');
 
-aiven_extras.pg_drop_subscription(arg_subscription_name TEXT)
+-- Create a publication `pub1` with `publish='INSERT,UPDATE'` for tables `foo` and `bar`
+-- (Note: use fully qualified names)
+SELECT * FROM aiven_extras.pg_create_publication('pub1', 'INSERT,UPDATE', 'public.foo', 'public.bar');
 
-$ SELECT * FROM aiven_extras.pg_drop_subscription('subscription');
+-- Create a publication `pub2` with `publish='INSERT'` for all tables
+SELECT * FROM aiven_extras.pg_create_publication_for_all_tables('pub2', 'INSERT');
 
-aiven_extras.pg_create_publication_for_all_tables(
- arg_publication_name TEXT,
- arg_publish TEXT)
+-- Disable a subscription
+SELECT * FROM aiven_extras.pg_alter_subscription_disable('subscription');
 
-$ SELECT * FROM aiven_extras.pg_create_publication_for_all_tables('pub1', 'INSERT');
+-- Enable a subscription
+SELECT * FROM aiven_extras.pg_alter_subscription_enable('subscription');
 
-pg_alter_subscription_disable(arg_subscription_name TEXT)
-
-$ SELECT * FROM aiven_extras.pg_alter_subscription_disable('subscription');
-
-pg_alter_subscription_enable(arg_subscription_name TEXT)
-
-$ SELECT * FROM aiven_extras.pg_alter_subscription_enable('subscription');
-
-pg_alter_subscription_refresh_publication(
-    arg_subscription_name TEXT,
-    arg_copy_data BOOLEAN = TRUE
-)
-
-$ SELECT * FROM aiven_extras.pg_alter_subscription_refresh_publication('subscription', FALSE);
+-- Refresh a subscribed publication with `copy_data` set to FALSE
+SELECT * FROM aiven_extras.pg_alter_subscription_refresh_publication('subscription', FALSE);
 ```
 
 **Configuring auto-explain:**
@@ -103,11 +93,14 @@ $ SELECT * FROM aiven_extras.pg_alter_subscription_refresh_publication('subscrip
 For details, refer to [PostgreSQL's documentation](https://www.postgresql.org/docs/current/auto-explain.html), but note that arguments for the exposed functions are of type `text`. Also note that currently `aiven_extras` implements a subset of the available functions.
 
 ```sql
-$ SELECT * FROM aiven_extras.auto_explain_load();
+-- Load the extension for the current session
+SELECT * FROM aiven_extras.auto_explain_load();
+
 -- Set minimum duration to 2000 ms
-$ SELECT * FROM aiven_extras.set_auto_explain_log_min_duration('2000');
+SELECT * FROM aiven_extras.set_auto_explain_log_min_duration('2000');
+
 -- Enable ANALYZE
-$ SELECT * FROM aiven_extras.set_auto_explain_log_analyze('on');
+SELECT * FROM aiven_extras.set_auto_explain_log_analyze('on');
 ```
 
 License
