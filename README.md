@@ -48,6 +48,7 @@ Usage
 | set_auto_explain_log_nested_statements    | text                                         | arg_parameter text                                                                                                                                                               |
 | set_auto_explain_log_timing               | text                                         | arg_parameter text                                                                                                                                                               |
 | set_auto_explain_log_verbose              | text                                         | arg_parameter text                                                                                                                                                               |
+| set_pgaudit_parameter                     | void                                         | arg_parameter text, arg_database text, arg_value text                                                                                                                            |
 
 Examples
 --------

@@ -453,6 +453,48 @@ END;
 $$;
 
 
+DROP FUNCTION IF EXISTS aiven_extras.set_pgaudit_parameter(TEXT, TEXT, TEXT);
+CREATE FUNCTION aiven_extras.set_pgaudit_parameter(
+    arg_parameter TEXT,
+    arg_database TEXT,
+    arg_value TEXT
+)
+RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, aiven_extras
+AS $$
+BEGIN
+    IF COALESCE(
+        (SELECT usesuper
+            FROM pg_catalog.pg_database d
+                JOIN pg_catalog.pg_user u
+                    ON (u.usesysid = d.datdba)
+                WHERE d.datname = arg_database
+                LIMIT 1
+        ),
+        TRUE
+    ) THEN
+        RAISE EXCEPTION 'Invalid database: %', arg_database;
+    ELSIF arg_parameter NOT IN (
+        'log',
+        'log_catalog',
+        'log_parameter',
+        'log_relation',
+        'log_statement',
+        'log_statement_once'
+    ) THEN
+        RAISE EXCEPTION 'Invalid parameter: %', arg_parameter;
+    END IF;
+
+    EXECUTE format('ALTER DATABASE %I SET pgaudit.%I = %L',
+        arg_database,
+        arg_parameter,
+        arg_value
+    );
+END;
+$$;
+
+
 -- THIS LINE ALWAYS NEEDS TO BE EXECUTED LAST IN FILE
 PERFORM pg_catalog.set_config('search_path', old_path, true);
 -- NO MORE CODE AFTER THIS
