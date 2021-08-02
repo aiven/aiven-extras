@@ -1,10 +1,13 @@
-short_ver = 1.1.4
-last_ver = 1.1.3
+short_ver := $(shell git describe --abbrev=0 --tags)
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
+
+git_versions := $(shell git tag | head -n-1 | tac)
+
 generated = \
 	build/aiven_extras.control \
 	build/sql/aiven_extras--$(short_ver).sql \
-	build/sql/aiven_extras--$(last_ver)--$(short_ver).sql
+	$(foreach version,$(git_versions),\
+		build/sql/aiven_extras--$(version)--$(short_ver).sql)
 
 rpm: rpm-9.6 rpm-10 rpm-11 rpm-12 rpm-13
 
@@ -19,7 +22,7 @@ build/sql/aiven_extras--$(short_ver).sql: sql/aiven_extras.sql
 	mkdir -p $(@D)
 	cp -fp $^ $@
 
-build/sql/aiven_extras--$(last_ver)--$(short_ver).sql: sql/aiven_extras.sql
+build/sql/aiven_extras--%--$(short_ver).sql: sql/aiven_extras.sql
 	mkdir -p $(@D)
 	cp -fp $^ $@
 
