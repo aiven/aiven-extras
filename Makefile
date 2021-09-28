@@ -6,7 +6,7 @@ generated = \
 	build/sql/aiven_extras--$(short_ver).sql \
 	build/sql/aiven_extras--$(last_ver)--$(short_ver).sql
 
-rpm: rpm-9.6 rpm-10 rpm-11 rpm-12 rpm-13
+rpm: rpm-9.6 rpm-10 rpm-11 rpm-12 rpm-13 rpm-14
 
 clean:
 	rm -rf build/ rpm/ aiven-extras-rpm-src.tar
@@ -25,7 +25,7 @@ build/sql/aiven_extras--$(last_ver)--$(short_ver).sql: sql/aiven_extras.sql
 
 rpm-%: $(generated)
 	git archive --output=aiven-extras-rpm-src.tar --prefix=aiven-extras/ HEAD
-        # add generated files to the tar, they're not in git repository
+	# add generated files to the tar, they're not in git repository
 	tar -r -f aiven-extras-rpm-src.tar \
 		--transform=s,build/,aiven-extras/, \
 		$(generated)
