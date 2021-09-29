@@ -6,6 +6,9 @@ generated = \
 	build/sql/aiven_extras--$(short_ver).sql \
 	build/sql/aiven_extras--$(last_ver)--$(short_ver).sql
 
+# for downstream packager
+RPM_MINOR_VERSION_SUFFIX ?=
+
 rpm: rpm-9.6 rpm-10 rpm-11 rpm-12 rpm-13 rpm-14
 
 clean:
@@ -35,7 +38,7 @@ rpm-%: $(generated)
 		--define "packagenameversion $(subst .,,$(subst rpm-,,$@))" \
 		--define "pgmajorversion $(subst rpm-,,$@)" \
 		--define 'major_version $(short_ver)' \
-		--define 'minor_version $(subst -,.,$(subst $(short_ver)-,,$(long_ver)))'
+		--define 'minor_version $(subst -,.,$(subst $(short_ver)-,,$(long_ver)))$(RPM_MINOR_VERSION_SUFFIX)'
 	$(RM) aiven-extras-rpm-src.tar
 
 tests:
