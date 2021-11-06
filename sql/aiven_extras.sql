@@ -162,9 +162,10 @@ SECURITY DEFINER
 SET search_path = pg_catalog, aiven_extras
 AS $$
 BEGIN
-    EXECUTE pg_catalog.format(
-        'ALTER SUBSCRIPTION %I REFRESH PUBLICATION WITH (copy_data=%s)',
-        arg_subscription_name, arg_copy_data::TEXT);
+    PERFORM aiven_extras.dblink_record_execute(
+        pg_catalog.format('user=%L dbname=%L port=%L', current_user, pg_catalog.current_database(), (SELECT setting FROM pg_catalog.pg_settings WHERE name = 'port')),
+        pg_catalog.format('ALTER SUBSCRIPTION %I REFRESH PUBLICATION WITH (copy_data=%s)', arg_subscription_name, arg_copy_data::TEXT)
+    );
 END;
 $$;
 
