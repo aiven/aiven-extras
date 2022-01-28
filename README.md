@@ -2,7 +2,7 @@ aiven-extras
 ============
 
 This extension is meant for use in enviroments where you want non-superusers to be able
-to use certain database features, such as creating logical replication connections using PostgreSQL 10+'s logical replications
+to use certain database features, such as creating logical replication connections using PostgreSQL® 10+'s logical replications
 SUBSCRIPTION/PUBLICATION concepts or configuring the `auto_explain` extension.
 
 It allows you to use logical replication when installed originally by root and the
@@ -130,6 +130,12 @@ Bug reports and patches are very welcome, please post them as GitHub issues
 and pull requests at https://github.com/aiven/aiven-extras . Any possible
 vulnerabilities or other serious issues should be reported directly to the
 maintainers <opensource@aiven.io>.
+
+
+Trademarks
+==========
+
+Postgres, PostgreSQL and the Slonik Logo are trademarks or registered trademarks of the PostgreSQL Community Association of Canada, and used with their permission.
 
 
 Copyright
