@@ -60,7 +60,7 @@ END IF;
 DROP FUNCTION IF EXISTS aiven_extras.dblink_record_execute(TEXT, TEXT);
 CREATE FUNCTION aiven_extras.dblink_record_execute(TEXT, TEXT)
 RETURNS SETOF record LANGUAGE c
-PARALLEL RESTRICTED STRICT
+PARALLEL UNSAFE STRICT
 AS '$libdir/dblink', $$dblink_record$$;
 
 
