@@ -496,6 +496,33 @@ END;
 $$;
 
 
+DROP FUNCTION IF EXISTS aiven_extras.explain_statement(TEXT);
+CREATE FUNCTION aiven_extras.explain_statement(
+    arg_query TEXT,
+    OUT execution_plan JSON
+)
+RETURNS SETOF JSON
+RETURNS NULL ON NULL INPUT
+LANGUAGE plpgsql
+-- This is needed because otherwise the executing user would need to have the
+-- SELECT privilege on all tables that are part of the plan.
+SECURITY DEFINER
+-- We don't want to force users to change statements (e.g. schema-prefix all
+-- tables in the query), so this intentionally does not specifiy a search_path.
+-- Still, this will not help with users having custom search paths.
+AS $$
+DECLARE
+    curs REFCURSOR;
+    plan JSON;
+BEGIN
+    OPEN curs FOR EXECUTE pg_catalog.concat('EXPLAIN (FORMAT JSON) ', arg_query);
+    FETCH curs INTO plan;
+    CLOSE curs;
+    RETURN QUERY SELECT plan;
+END;
+$$;
+
+
 -- THIS LINE ALWAYS NEEDS TO BE EXECUTED LAST IN FILE
 PERFORM pg_catalog.set_config('search_path', old_path, true);
 -- NO MORE CODE AFTER THIS
