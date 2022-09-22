@@ -479,6 +479,8 @@ BEGIN
     ELSIF arg_parameter NOT IN (
         'log',
         'log_catalog',
+        'log_max_string_length',
+        'log_nested_statements',
         'log_parameter',
         'log_relation',
         'log_statement',
