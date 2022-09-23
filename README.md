@@ -50,7 +50,7 @@ Usage
 | set_auto_explain_log_timing               | text                                         | arg_parameter text                                                                                                                                                               |
 | set_auto_explain_log_verbose              | text                                         | arg_parameter text                                                                                                                                                               |
 | set_pgaudit_parameter                     | void                                         | arg_parameter text, arg_database text, arg_value text                                                                                                                            |
-| set_pgaudit_role_parameter                | void                                         | arg_parameter text, arg_database text, arg_value text                                                                                                                            |
+| set_pgaudit_role_parameter                | void                                         | arg_parameter text, arg_role text, arg_value text                                                                                                                                |
 
 Examples
 --------
