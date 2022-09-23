@@ -1,5 +1,5 @@
-short_ver = 1.1.6
-last_ver = 1.1.5
+short_ver = 1.1.7
+last_ver = 1.1.6
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = \
 	build/aiven_extras.control \
