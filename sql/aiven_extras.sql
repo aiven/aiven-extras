@@ -571,3 +571,13 @@ PERFORM pg_catalog.set_config('search_path', old_path, true);
 
 END;
 $OUTER$;
+
+-- standby slots fuctions
+CREATE FUNCTION aiven_extras.pg_create_logical_replication_slot_on_standby(
+	slot_name name,
+	plugin name,
+	temporary boolean DEFAULT false,
+	twophase boolean DEFAULT false,
+	OUT slot_name name, OUT lsn pg_lsn)
+AS 'MODULE_PATHNAME', 'standby_slot_create'
+LANGUAGE C;

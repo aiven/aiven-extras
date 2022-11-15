@@ -2,3 +2,4 @@ comment = 'aiven_extras'
 default_version = '__short_ver__'
 relocatable = false
 schema = 'aiven_extras'
+module_pathname = '$libdir/aiven_extras'
