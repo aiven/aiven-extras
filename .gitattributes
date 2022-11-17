@@ -1,3 +1,1 @@
 *.spec export-ignore
-*.in
-sql/aiven_extras.sql export-ignore

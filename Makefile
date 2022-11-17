@@ -1,9 +1,8 @@
 short_ver = 1.1.7
 last_ver = 1.1.6
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
-generated = \
-	aiven_extras.control \
-	sql/aiven_extras--$(short_ver).sql 
+generated = aiven_extras.control \
+			sql/aiven_extras--$(short_ver).sql
 # for downstream packager
 RPM_MINOR_VERSION_SUFFIX ?=
 
@@ -13,13 +12,16 @@ MODULE_big = aiven_extras
 OBJS = src/standby_slots.o
 PG_CONFIG ?= pg_config
 DATA = $(wildcard sql/*--*.sql)
+DATA_built = $(generated)
+TESTS = $(wildcard test/sql/*.sql)
+REGRESS = $(patsubst test/sql/%.sql,%,$(TESTS))
+REGRESS_OPTS = --inputdir=test --outputdir=test/out/
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 EXTRA_CLEAN = aiven_extras.control aiven-extras-rpm-src.tar
 
 include $(PGXS)
 
 rpm: rpm-96 rpm-10 rpm-11 rpm-12 rpm-13 rpm-14
-
 
 aiven_extras.control: aiven_extras.control.in
 	mkdir -p $(@D)
@@ -30,9 +32,7 @@ sql/aiven_extras--$(short_ver).sql: sql/aiven_extras.sql
 	cp -fp $^ $@
 
 rpm-%: $(generated)
-	git archive --output=aiven-extras-rpm-src.tar \
-				--prefix=aiven-extras/sql/ --add-file sql/aiven_extras--$(short_ver).sql \
-				--prefix=aiven-extras/ HEAD --add-file aiven_extras.control
+	git archive --output=aiven-extras-rpm-src.tar --prefix aiven-extras/ HEAD
 	QA_RPATHS=0x0002 rpmbuild -bb aiven-extras.spec \
 		--define '_topdir $(PWD)/rpm' \
 		--define '_sourcedir $(CURDIR)' \
@@ -43,6 +43,3 @@ rpm-%: $(generated)
 		--define 'major_version $(short_ver)' \
 		--define 'minor_version $(subst -,.,$(subst $(short_ver)-,,$(long_ver)))$(RPM_MINOR_VERSION_SUFFIX)'
 	$(RM) aiven-extras-rpm-src.tar
-
-tests:
-	./test/check-sql.sh

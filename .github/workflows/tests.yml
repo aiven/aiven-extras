@@ -1,23 +1,48 @@
-name: SQL Syntax check
+name: Extension tests
 
 on: [push, pull_request]
 
 jobs:
   sql-test:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    env:
+      PGPORT: 54322
+      PGUSER: postgres
     strategy:
-      max-parallel: 4
+      matrix:
+        postgresql_version: [11, 12, 13, 14, 15]
+        experimental: [false]
+        repo: ["pgdg"]
+        # Define the current dev version to be experimental
+        include:
+          - postgresql_version: 16
+            experimental: true
+            repo: "pgdg-snapshot"
     steps:
     - uses: actions/checkout@v1
 
     - name: Install PG
-      run: sudo apt install -y postgresql
+      run: |
+        sudo apt update
+        sudo apt install curl ca-certificates gnupg
+        curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg >/dev/null
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-${{ matrix.repo }} main ${{ matrix.postgresql_version }}" > /etc/apt/sources.list.d/pgdg.list'
+        sudo apt update
+        sudo apt install postgresql-${{matrix.postgresql_version}} postgresql-contrib-${{matrix.postgresql_version}} postgresql-server-dev-${{matrix.postgresql_version}}
 
-    - name: Enable trust auth
-      run: echo "local all all      trust" | sudo tee /etc/postgresql/*/main/pg_hba.conf
+    - name: Setup cluster
+      run: |
+        sudo pg_createcluster ${{matrix.postgresql_version}} test -p ${PGPORT} -- --auth-local=trust
 
     - name: (Re)start PG server
-      run: sudo service postgresql restart
+      run: |
+        sudo pg_ctlcluster ${{matrix.postgresql_version}} test start
+        psql -c "ALTER SYSTEM SET wal_level = 'logical'"
+        sudo pg_ctlcluster ${{matrix.postgresql_version}} test restart
 
-    - name: Load SQL
-      run: make tests
+    - name: Install
+      run: sudo PATH=/usr/lib/postgresql/${{matrix.postgresql_version}}/bin:$PATH make install
+
+    - name: Run tests
+      run: PATH=/usr/lib/postgresql/${{matrix.postgresql_version}}/bin:$PATH make installcheck
