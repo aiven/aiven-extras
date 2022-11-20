@@ -37,6 +37,12 @@ sql/aiven_extras--$(last_ver)--$(short_ver).sql: sql/aiven_extras.sql
 	mkdir -p $(@D)
 	cp -fp $^ $@
 
+ifeq ("$(wildcard sql/aiven_extras--*--$(last_ver).sql)","")
+	@echo "ERROR: missing upgrade script to last version (sql/aiven_extras--*--$(last_ver).sql)"
+	@echo "       -> Please add one (with only --NOOP in it) and commit it"
+	@false
+endif
+
 rpm-%: $(generated)
 	git archive --output=aiven-extras-rpm-src.tar --prefix aiven-extras/ HEAD
 	QA_RPATHS=0x0002 rpmbuild -bb aiven-extras.spec \
