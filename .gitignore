@@ -1,3 +1,7 @@
 *~
-/build/
 /rpm/
+src/*.o
+*.so
+aiven_extras.control
+aiven-extras-rpm-src.tar
+test/out
