@@ -2,7 +2,9 @@ short_ver = 1.1.8
 last_ver = 1.1.7
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = aiven_extras.control \
-			sql/aiven_extras--$(short_ver).sql
+			sql/aiven_extras--$(short_ver).sql \
+			sql/aiven_extras--$(last_ver)--$(short_ver).sql
+
 # for downstream packager
 RPM_MINOR_VERSION_SUFFIX ?=
 
@@ -28,6 +30,10 @@ aiven_extras.control: aiven_extras.control.in
 	sed -e 's,__short_ver__,$(short_ver),g' < $^ > $@
 
 sql/aiven_extras--$(short_ver).sql: sql/aiven_extras.sql
+	mkdir -p $(@D)
+	cp -fp $^ $@
+
+sql/aiven_extras--$(last_ver)--$(short_ver).sql: sql/aiven_extras.sql
 	mkdir -p $(@D)
 	cp -fp $^ $@
 

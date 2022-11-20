@@ -572,7 +572,8 @@ PERFORM pg_catalog.set_config('search_path', old_path, true);
 END;
 $OUTER$;
 
--- standby slots fuctions
+-- standby slots functions
+DROP FUNCTION IF EXISTS aiven_extras.pg_create_logical_replication_slot_on_standby(name, name, boolean, boolean);
 CREATE FUNCTION aiven_extras.pg_create_logical_replication_slot_on_standby(
 	slot_name name,
 	plugin name,
