@@ -5,3 +5,4 @@ src/*.o
 aiven_extras.control
 aiven-extras-rpm-src.tar
 test/out
+.idea/
