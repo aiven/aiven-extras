@@ -11,7 +11,6 @@ License:        ASL 2.0
 Source0:        aiven-extras-rpm-src.tar
 BuildRequires:	postgresql%{pgmajorversion}-devel pgdg-srpm-macros
 Requires:	postgresql%{pgmajorversion}-server
-BuildArch:	noarch
 
 %description
 Aiven extras is a PostgreSQL extension allowing the use of some PostgreSQL
