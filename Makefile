@@ -1,9 +1,7 @@
 short_ver = 1.1.9
 last_ver = 1.1.8
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
-generated = aiven_extras.control \
-			sql/aiven_extras--$(short_ver).sql \
-			sql/aiven_extras--$(last_ver)--$(short_ver).sql
+generated = aiven_extras.control
 
 # for downstream packager
 RPM_MINOR_VERSION_SUFFIX ?=
@@ -14,7 +12,6 @@ MODULE_big = aiven_extras
 OBJS = src/standby_slots.o
 PG_CONFIG ?= pg_config
 DATA = $(wildcard sql/*--*.sql)
-DATA_built = $(generated)
 TESTS = $(wildcard test/sql/*.sql)
 REGRESS = $(patsubst test/sql/%.sql,%,$(TESTS))
 REGRESS_OPTS = --inputdir=test --outputdir=test/out/
@@ -28,14 +25,6 @@ rpm: rpm-96 rpm-10 rpm-11 rpm-12 rpm-13 rpm-14 rpm-15
 aiven_extras.control: aiven_extras.control.in
 	mkdir -p $(@D)
 	sed -e 's,__short_ver__,$(short_ver),g' < $^ > $@
-
-sql/aiven_extras--$(short_ver).sql: sql/aiven_extras.sql
-	mkdir -p $(@D)
-	cp -fp $^ $@
-
-sql/aiven_extras--$(last_ver)--$(short_ver).sql: sql/aiven_extras.sql
-	mkdir -p $(@D)
-	cp -fp $^ $@
 
 ifeq ("$(wildcard sql/aiven_extras--*--$(last_ver).sql)","")
 	@echo "ERROR: missing upgrade script to last version (sql/aiven_extras--*--$(last_ver).sql)"
