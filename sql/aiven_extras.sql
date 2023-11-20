@@ -110,6 +110,7 @@ CREATE FUNCTION aiven_extras.pg_create_subscription(
     arg_copy_data BOOLEAN = TRUE
 )
 RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = pg_catalog, aiven_extras
 AS $$
 BEGIN
@@ -545,12 +546,6 @@ CREATE FUNCTION aiven_extras.explain_statement(
 RETURNS SETOF JSON
 RETURNS NULL ON NULL INPUT
 LANGUAGE plpgsql
--- This is needed because otherwise the executing user would need to have the
--- SELECT privilege on all tables that are part of the plan.
-SECURITY DEFINER
--- We don't want to force users to change statements (e.g. schema-prefix all
--- tables in the query), so this intentionally does not specifiy a search_path.
--- Still, this will not help with users having custom search paths.
 AS $$
 DECLARE
     curs REFCURSOR;
