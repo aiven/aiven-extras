@@ -110,6 +110,7 @@ CREATE FUNCTION aiven_extras.pg_create_subscription(
     arg_copy_data BOOLEAN = TRUE
 )
 RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = pg_catalog, aiven_extras
 AS $$
 BEGIN
