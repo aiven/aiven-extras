@@ -23,7 +23,7 @@ EXTRA_CLEAN = aiven_extras.control aiven-extras-rpm-src.tar
 
 include $(PGXS)
 
-rpm: rpm-96 rpm-10 rpm-11 rpm-12 rpm-13 rpm-14 rpm-15
+rpm: rpm-96 rpm-10 rpm-11 rpm-12 rpm-13 rpm-14 rpm-15 rpm-16
 
 aiven_extras.control: aiven_extras.control.in
 	mkdir -p $(@D)
