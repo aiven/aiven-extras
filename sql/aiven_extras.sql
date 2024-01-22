@@ -170,8 +170,10 @@ END;
 $$;
 
 DROP FUNCTION IF EXISTS aiven_extras.pg_drop_subscription(TEXT);
+DROP FUNCTION IF EXISTS aiven_extras.pg_drop_subscription(TEXT, BOOLEAN);
 CREATE FUNCTION aiven_extras.pg_drop_subscription(
-    arg_subscription_name TEXT
+    arg_subscription_name TEXT,
+    arg_drop_repl_slot BOOLEAN = TRUE
 )
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
@@ -191,7 +193,9 @@ BEGIN
     EXECUTE pg_catalog.format('ALTER SUBSCRIPTION %I DISABLE', arg_subscription_name);
     EXECUTE pg_catalog.format('ALTER SUBSCRIPTION %I SET (slot_name = NONE)', arg_subscription_name);
     EXECUTE pg_catalog.format('DROP SUBSCRIPTION %I', arg_subscription_name);
-    PERFORM aiven_extras.dblink_slot_create_or_drop(l_subconninfo, l_slot_name, 'drop');
+    IF (arg_drop_repl_slot IS TRUE) THEN
+        PERFORM aiven_extras.dblink_slot_create_or_drop(l_subconninfo, l_slot_name, 'drop');
+    END IF;
 END;
 $$;
 
