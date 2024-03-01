@@ -1,5 +1,5 @@
-short_ver = 1.1.11
-last_ver = 1.1.10
+short_ver = 1.1.12
+last_ver = 1.1.11
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = aiven_extras.control \
 			sql/aiven_extras--$(short_ver).sql \
@@ -11,7 +11,7 @@ RPM_MINOR_VERSION_SUFFIX ?=
 # Extension packaging
 EXTENSION = aiven_extras
 MODULE_big = aiven_extras
-OBJS = src/standby_slots.o
+OBJS = src/aiven_extras.o
 PG_CONFIG ?= pg_config
 DATA = $(filter-out $(generated),$(wildcard sql/*--*.sql))
 DATA_built = $(generated)
