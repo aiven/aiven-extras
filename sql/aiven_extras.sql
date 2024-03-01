@@ -580,3 +580,9 @@ CREATE FUNCTION aiven_extras.pg_create_logical_replication_slot_on_standby(
 	OUT slot_name name, OUT lsn pg_lsn)
 AS 'MODULE_PATHNAME', 'standby_slot_create'
 LANGUAGE C;
+
+DROP FUNCTION IF EXISTS aiven_extras.aiven_truncate_freespace_map(regclass);
+CREATE FUNCTION aiven_extras.truncate_freespace_map(regclass)
+RETURNS void 
+AS 'MODULE_PATHNAME', 'aiven_truncate_freespace_map'
+LANGUAGE C;

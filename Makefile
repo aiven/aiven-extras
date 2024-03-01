@@ -11,7 +11,7 @@ RPM_MINOR_VERSION_SUFFIX ?=
 # Extension packaging
 EXTENSION = aiven_extras
 MODULE_big = aiven_extras
-OBJS = src/standby_slots.o
+OBJS = src/aiven_extras.o
 PG_CONFIG ?= pg_config
 DATA = $(filter-out $(generated),$(wildcard sql/*--*.sql))
 DATA_built = $(generated)
