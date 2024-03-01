@@ -511,6 +511,8 @@ RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, aiven_extras
 AS $$
+DECLARE
+   is_allowed bool := true;
 BEGIN
     IF COALESCE(
         (SELECT rolsuper
@@ -521,7 +523,22 @@ BEGIN
         FALSE
     ) THEN
         RAISE EXCEPTION 'Configuring superuser roles not allowed: %', arg_role;
-    ELSIF arg_parameter NOT IN (
+    END IF;
+    WITH RECURSIVE tree AS (
+    -- Start with the possibly admin_role
+    SELECT member AS base_role, roleid, admin_option, member FROM pg_auth_members
+    UNION ALL
+    -- Recurse down, keeping admin_option from up if it exists
+    SELECT base_role, pg_auth_members.roleid, tree.admin_option OR pg_auth_members.admin_option AS admin_option, pg_auth_members.member FROM pg_auth_members JOIN tree ON pg_auth_members.member = tree.roleid
+    )
+    SELECT EXISTS (
+    SELECT 1 FROM tree WHERE base_role = session_user::regrole::oid AND admin_option AND roleid = arg_role::regrole
+   ) INTO is_allowed;
+    IF NOT is_allowed THEN
+        RAISE EXCEPTION 'Configuring roles on which we don''t have ADMIN membership is not allowed';
+    END IF;
+
+    IF arg_parameter NOT IN (
         'log',
         'log_catalog',
         'log_max_string_length',
