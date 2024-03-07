@@ -1,3 +1,15 @@
+-- Check that if schema owned by other already exist
+DO LANGUAGE plpgsql
+$$
+BEGIN
+    IF EXISTS (
+        SELECT * FROM information_schema.schemata WHERE schema_name = 'aiven_extras' AND schema_owner <> current_user
+    ) THEN
+        RAISE EXCEPTION 'Cannot create extension, schema ''aiven_extras'' owned by other user already exists';
+    END IF;
+END
+$$;
+
 DO LANGUAGE plpgsql
 $OUTER$
 DECLARE
