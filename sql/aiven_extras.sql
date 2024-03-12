@@ -483,12 +483,17 @@ BEGIN
     ELSIF arg_parameter NOT IN (
         'log',
         'log_catalog',
+        'log_client',
+        'log_level',
         'log_max_string_length',
         'log_nested_statements',
         'log_parameter',
+        'log_parameter_max_size',
         'log_relation',
+        'log_rows',
         'log_statement',
-        'log_statement_once'
+        'log_statement_once',
+        'role'
     ) THEN
         RAISE EXCEPTION 'Invalid parameter: %', arg_parameter;
     END IF;
@@ -524,12 +529,17 @@ BEGIN
     ELSIF arg_parameter NOT IN (
         'log',
         'log_catalog',
+        'log_client',
+        'log_level',
         'log_max_string_length',
         'log_nested_statements',
         'log_parameter',
+        'log_parameter_max_size',
         'log_relation',
+        'log_rows',
         'log_statement',
-        'log_statement_once'
+        'log_statement_once',
+        'role'
     ) THEN
         RAISE EXCEPTION 'Invalid parameter: %', arg_parameter;
     END IF;
