@@ -100,26 +100,52 @@ END;
 $$;
 
 
-DROP FUNCTION IF EXISTS aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN);
+DROP FUNCTION IF EXISTS aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT);
 CREATE FUNCTION aiven_extras.pg_create_subscription(
     arg_subscription_name TEXT,
     arg_connection_string TEXT,
     arg_publication_name TEXT,
     arg_slot_name TEXT,
     arg_slot_create BOOLEAN = FALSE,
-    arg_copy_data BOOLEAN = TRUE
+    arg_copy_data BOOLEAN = TRUE,
+    arg_origin TEXT = 'any'
 )
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, aiven_extras
 AS $$
+DECLARE
+    pg_version INT;
+    create_subscription_cmd TEXT;
 BEGIN
+    -- Get the PostgreSQL version
+    SELECT current_setting('server_version_num')::INT INTO pg_version;
+
+    IF pg_version < 160000 AND arg_origin <> 'any' THEN
+        RAISE EXCEPTION 'PostgreSQL version must be 16 or higher to specify origin other than "any". Current version: %', pg_version;
+    END IF;
+
+    IF arg_origin <> 'any' AND arg_origin <> 'none' THEN
+        RAISE EXCEPTION 'Invalid origin: %. Origin must be either "any" or "none".', arg_origin;
+    END IF;
+
     IF (arg_slot_create IS TRUE) THEN
         PERFORM aiven_extras.dblink_slot_create_or_drop(arg_connection_string, arg_slot_name, 'create');
     END IF;
-    EXECUTE pg_catalog.format(
-        'CREATE SUBSCRIPTION %I connection %L publication %I WITH (slot_name=%L, create_slot=FALSE, copy_data=%s)',
-        arg_subscription_name, arg_connection_string, arg_publication_name, arg_slot_name, arg_copy_data::TEXT);
+
+    -- PG16 and later: Include the origin parameter only if it's 'none', as its default is any
+   IF pg_version >= 160000 AND arg_origin = 'none' THEN
+        create_subscription_cmd := pg_catalog.format(
+            'CREATE SUBSCRIPTION %I CONNECTION %L PUBLICATION %I WITH (slot_name=%L, create_slot=FALSE, copy_data=%s, origin=%L)',
+            arg_subscription_name, arg_connection_string, arg_publication_name, arg_slot_name, arg_copy_data::TEXT, arg_origin);
+    ELSE
+        create_subscription_cmd := pg_catalog.format(
+            'CREATE SUBSCRIPTION %I CONNECTION %L PUBLICATION %I WITH (slot_name=%L, create_slot=FALSE, copy_data=%s)',
+            arg_subscription_name, arg_connection_string, arg_publication_name, arg_slot_name, arg_copy_data::TEXT);
+    END IF;
+
+    -- Execute the CREATE SUBSCRIPTION command
+    EXECUTE create_subscription_cmd;
 END;
 $$;
 
