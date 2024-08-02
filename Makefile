@@ -1,5 +1,5 @@
-short_ver = 1.1.13
-last_ver = 1.1.12
+short_ver = 1.1.14
+last_ver = 1.1.13
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = aiven_extras.control \
 			sql/aiven_extras--$(short_ver).sql \
@@ -23,7 +23,7 @@ EXTRA_CLEAN = aiven_extras.control aiven-extras-rpm-src.tar
 
 include $(PGXS)
 
-rpm: rpm-96 rpm-10 rpm-11 rpm-12 rpm-13 rpm-14 rpm-15 rpm-16
+rpm: rpm-12 rpm-13 rpm-14 rpm-15 rpm-16 rpm-17
 
 aiven_extras.control: aiven_extras.control.in
 	mkdir -p $(@D)

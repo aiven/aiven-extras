@@ -31,6 +31,8 @@ standby_slot_create(PG_FUNCTION_ARGS)
 	Name		plugin = PG_GETARG_NAME(1);
 	bool		temporary = PG_GETARG_BOOL(2);
 	bool		two_phase = PG_GETARG_BOOL(3);
+	bool		failover = PG_GETARG_BOOL(4);
+	bool		synced = PG_GETARG_BOOL(5);
 	Datum		result;
 	TupleDesc	tupdesc;
 	HeapTuple	tuple;
@@ -76,6 +78,16 @@ standby_slot_create(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("two phase commits are only available on PG >= 14")));
 #endif
+#if PG_VERSION_NUM < 17000
+	if (failover)
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("failover is only available on PG >= 17")));
+	if (synced)
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("synced is only available on PG >= 17")));
+#endif
 	/* Don't bother returning anything else than void for now */
 	Assert(!MyReplicationSlot);
 
@@ -87,10 +99,16 @@ standby_slot_create(PG_FUNCTION_ARGS)
 	 * slots can be created as temporary from beginning as they get dropped on
 	 * error as well.
 	 */
-	ReplicationSlotCreate(NameStr(*name), true,
+	ReplicationSlotCreate(
+	        NameStr(*name),
+	        true,
 			temporary ? RS_TEMPORARY : RS_EPHEMERAL
 #if PG_VERSION_NUM >= 140000
 			, two_phase
+#endif
+#if PG_VERSION_NUM >= 170000
+			, failover
+			, synced
 #endif
 			);
 

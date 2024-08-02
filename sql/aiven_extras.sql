@@ -597,12 +597,14 @@ END;
 $OUTER$;
 
 -- standby slots functions
-DROP FUNCTION IF EXISTS aiven_extras.pg_create_logical_replication_slot_on_standby(name, name, boolean, boolean);
+DROP FUNCTION IF EXISTS aiven_extras.pg_create_logical_replication_slot_on_standby(name, name, boolean, boolean, boolean, boolean);
 CREATE FUNCTION aiven_extras.pg_create_logical_replication_slot_on_standby(
 	slot_name name,
 	plugin name,
 	temporary boolean DEFAULT false,
 	twophase boolean DEFAULT false,
+	failover boolean DEFAULT false,
+	synced boolean DEFAULT false,
 	OUT slot_name name, OUT lsn pg_lsn)
 AS 'MODULE_PATHNAME', 'standby_slot_create'
 LANGUAGE C;
