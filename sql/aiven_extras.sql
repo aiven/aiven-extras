@@ -10,10 +10,10 @@ PERFORM pg_catalog.set_config('search_path', 'pg_catalog, pg_temp', true);
 
 
 PERFORM 1
-    FROM pg_catalog.pg_type AS t JOIN pg_catalog.pg_roles AS r ON (r.oid = t.typowner)
+    FROM pg_catalog.pg_type AS t JOIN pg_catalog.pg_roles AS r ON (r.oid OPERATOR(pg_catalog.=) t.typowner)
     WHERE r.rolsuper
-        AND t.typnamespace = 'aiven_extras'::regnamespace
-        AND t.typname = 'aiven_pg_subscription';
+        AND t.typnamespace OPERATOR(pg_catalog.=) 'aiven_extras'::regnamespace
+        AND t.typname OPERATOR(pg_catalog.=) 'aiven_pg_subscription';
 IF NOT FOUND THEN
     CREATE TYPE aiven_extras.aiven_pg_subscription AS (
         subdbid OID,
@@ -30,8 +30,8 @@ END IF;
 PERFORM 1
     FROM pg_catalog.pg_type AS t JOIN pg_catalog.pg_roles AS r ON (r.oid = t.typowner)
     WHERE r.rolsuper
-        AND typnamespace = 'aiven_extras'::regnamespace
-        AND typname = 'aiven_pg_stat_replication';
+        AND typnamespace OPERATOR(pg_catalog.=) 'aiven_extras'::regnamespace
+        AND typname OPERATOR(pg_catalog.=) 'aiven_pg_stat_replication';
 IF NOT FOUND THEN
     CREATE TYPE aiven_extras.aiven_pg_stat_replication AS (
         pid INT,
@@ -84,9 +84,9 @@ BEGIN
                 arg_connection_string,
                 l_clear_search_path || l_slot_existence_query
             ) AS d (res BOOLEAN);
-    IF arg_action = 'create' AND l_slot_exists IS NOT TRUE THEN
+    IF arg_action OPERATOR(pg_catalog.=) 'create' AND l_slot_exists IS NOT TRUE THEN
         l_slot_action_query := pg_catalog.format('SELECT TRUE FROM pg_catalog.pg_create_logical_replication_slot(%L, %L, FALSE)', arg_slot_name, 'pgoutput');
-    ELSIF arg_action = 'drop' AND l_slot_exists IS TRUE THEN
+    ELSIF arg_action OPERATOR(pg_catalog.=) 'drop' AND l_slot_exists IS TRUE THEN
         l_slot_action_query := pg_catalog.format('SELECT TRUE FROM pg_catalog.pg_drop_replication_slot(%L)', arg_slot_name);
     END IF;
     IF l_slot_action_query IS NOT NULL THEN
@@ -122,11 +122,11 @@ BEGIN
     -- Get the PostgreSQL version
     SELECT current_setting('server_version_num')::INT INTO pg_version;
 
-    IF pg_version < 160000 AND arg_origin <> 'any' THEN
+    IF pg_version OPERATOR(pg_catalog.<) 160000 AND arg_origin OPERATOR(pg_catalog.<>) 'any' THEN
         RAISE EXCEPTION 'PostgreSQL version must be 16 or higher to specify origin other than "any". Current version: %', pg_version;
     END IF;
 
-    IF arg_origin <> 'any' AND arg_origin <> 'none' THEN
+    IF arg_origin OPERATOR(pg_catalog.<>) 'any' AND arg_origin OPERATOR(pg_catalog.<>) 'none' THEN
         RAISE EXCEPTION 'Invalid origin: %. Origin must be either "any" or "none".', arg_origin;
     END IF;
 
@@ -135,7 +135,7 @@ BEGIN
     END IF;
 
     -- PG16 and later: Include the origin parameter only if it's 'none', as its default is any
-   IF pg_version >= 160000 AND arg_origin = 'none' THEN
+   IF pg_version OPERATOR(pg_catalog.>=) 160000 AND arg_origin OPERATOR(pg_catalog.=) 'none' THEN
         create_subscription_cmd := pg_catalog.format(
             'CREATE SUBSCRIPTION %I CONNECTION %L PUBLICATION %I WITH (slot_name=%L, create_slot=FALSE, copy_data=%s, origin=%L)',
             arg_subscription_name, arg_connection_string, arg_publication_name, arg_slot_name, arg_copy_data::TEXT, arg_origin);
@@ -190,7 +190,7 @@ SET search_path = pg_catalog
 AS $$
 BEGIN
     PERFORM aiven_extras.dblink_record_execute(
-        pg_catalog.format('user=%L dbname=%L port=%L', current_user, pg_catalog.current_database(), (SELECT setting FROM pg_catalog.pg_settings WHERE name = 'port')),
+        pg_catalog.format('user=%L dbname=%L port=%L', current_user, pg_catalog.current_database(), (SELECT setting FROM pg_catalog.pg_settings WHERE name OPERATOR(pg_catalog.=) 'port')),
         pg_catalog.format('ALTER SUBSCRIPTION %I REFRESH PUBLICATION WITH (copy_data=%s)', arg_subscription_name, arg_copy_data::TEXT)
     );
 END;
@@ -428,7 +428,7 @@ BEGIN
                 backend_start, backend_xmin, state, sent_lsn, write_lsn, flush_lsn, replay_lsn, write_lag,
                 flush_lag, replay_lag, sync_priority, sync_state
             FROM pg_catalog.pg_stat_replication
-            WHERE usename = session_user;
+            WHERE usename OPERATOR(pg_catalog.=) session_user;
 END;
 $$;
 
@@ -458,15 +458,15 @@ DECLARE
   l_parsed_arg_tables TEXT[];
 BEGIN
     l_table_count = pg_catalog.array_length(arg_tables, 1);
-    IF l_table_count >= 1
+    IF l_table_count OPERATOR(pg_catalog.>=) 1
     THEN
         l_parsed_arg_tables = ARRAY[]::TEXT[];
         l_tables_command = 'CREATE PUBLICATION %I FOR TABLE ';
         FOREACH l_ident IN ARRAY arg_tables LOOP
             l_parsed_ident = parse_ident(l_ident);
-            ASSERT pg_catalog.array_length(l_parsed_ident, 1) <= 2, 'Only simple table names or tables qualified with schema names allowed';
+            ASSERT pg_catalog.array_length(l_parsed_ident, 1) OPERATOR(pg_catalog.<=) 2, 'Only simple table names or tables qualified with schema names allowed';
             -- Make sure we pass in a simple list of identifiers, so separate the tables from parent schemas
-            IF pg_catalog.array_length(l_parsed_ident, 1) = 2
+            IF pg_catalog.array_length(l_parsed_ident, 1) OPERATOR(pg_catalog.=) 2
             THEN
                 l_tables_command = l_tables_command || '%I.%I, ';
             ELSE
@@ -500,8 +500,8 @@ BEGIN
         (SELECT usesuper
             FROM pg_catalog.pg_database d
                 JOIN pg_catalog.pg_user u
-                    ON (u.usesysid = d.datdba)
-                WHERE d.datname = arg_database
+                    ON (u.usesysid OPERATOR(pg_catalog.=) d.datdba)
+                WHERE d.datname OPERATOR(pg_catalog.=) arg_database
                 LIMIT 1
         ),
         TRUE
@@ -542,7 +542,7 @@ BEGIN
     IF COALESCE(
         (SELECT rolsuper
             FROM pg_catalog.pg_roles
-                WHERE rolname = arg_role
+                WHERE rolname OPERATOR(pg_catalog.=) arg_role
                 LIMIT 1
         ),
         FALSE
