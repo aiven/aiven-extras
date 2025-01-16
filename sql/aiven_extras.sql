@@ -561,7 +561,7 @@ BEGIN
         RAISE EXCEPTION 'Invalid parameter: %', arg_parameter;
     END IF;
 
-    EXECUTE format('ALTER ROLE %I SET pgaudit.%I = %L',
+    EXECUTE pg_catalog.format('ALTER ROLE %I SET pgaudit.%I = %L',
         arg_role,
         arg_parameter,
         arg_value
