@@ -492,12 +492,10 @@ CREATE FUNCTION aiven_extras.set_pgaudit_parameter(
     arg_value TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
 BEGIN
-	IF current_setting('server_version_num')::int >= 150000 THEN
-		RAISE WARNING 'This function is deprecated, changing superuser-reserved GUC is now grantable to roles';
-	END IF;
     IF COALESCE(
         (SELECT usesuper
             FROM pg_catalog.pg_database d
@@ -530,8 +528,6 @@ BEGIN
 END;
 $$;
 
-
-
 DROP FUNCTION IF EXISTS aiven_extras.set_pgaudit_role_parameter(TEXT, TEXT, TEXT);
 CREATE FUNCTION aiven_extras.set_pgaudit_role_parameter(
     arg_parameter TEXT,
@@ -539,12 +535,10 @@ CREATE FUNCTION aiven_extras.set_pgaudit_role_parameter(
     arg_value TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
 BEGIN
-	IF current_setting('server_version_num')::int >= 150000 THEN
-		RAISE WARNING 'This function is deprecated, changing superuser-reserved GUC is now grantable to roles';
-	END IF;
     IF COALESCE(
         (SELECT rolsuper
             FROM pg_catalog.pg_roles
@@ -574,19 +568,6 @@ BEGIN
     );
 END;
 $$;
-
-DO $$
-BEGIN
-  IF current_setting('server_version_num')::int < 150000 THEN
-        ALTER FUNCTION aiven_extras.set_pgaudit_parameter(text, text, text) SECURITY DEFINER;
-        ALTER FUNCTION aiven_extras.set_pgaudit_role_parameter(text, text, text) SECURITY DEFINER;
-  ELSE
-        ALTER FUNCTION aiven_extras.set_pgaudit_parameter(text, text, text) SECURITY INVOKER;
-        ALTER FUNCTION aiven_extras.set_pgaudit_role_parameter(text, text, text) SECURITY INVOKER;
-  END IF;
-END;
-$$ language plpgsql;
-
 
 DROP FUNCTION IF EXISTS aiven_extras.explain_statement(TEXT);
 CREATE FUNCTION aiven_extras.explain_statement(
