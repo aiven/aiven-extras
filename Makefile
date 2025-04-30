@@ -1,5 +1,5 @@
-short_ver = 1.1.16
-last_ver = 1.1.15
+short_ver = 1.1.17
+last_ver = 1.1.16
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = aiven_extras.control \
 			sql/aiven_extras--$(short_ver).sql \
