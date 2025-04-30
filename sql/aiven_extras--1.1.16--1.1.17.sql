@@ -120,7 +120,7 @@ DECLARE
     create_subscription_cmd TEXT;
 BEGIN
     -- Get the PostgreSQL version
-    SELECT current_setting('server_version_num')::INT INTO pg_version;
+    SELECT pg_catalog.current_setting('server_version_num')::INT INTO pg_version;
 
     IF pg_version OPERATOR(pg_catalog.<) 160000 AND arg_origin OPERATOR(pg_catalog.<>) 'any' THEN
         RAISE EXCEPTION 'PostgreSQL version must be 16 or higher to specify origin other than "any". Current version: %', pg_version;
@@ -495,7 +495,7 @@ RETURNS VOID LANGUAGE plpgsql
 SET search_path = pg_catalog
 AS $$
 BEGIN
-	IF current_setting('server_version_num')::int >= 150000 THEN
+	IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_cattalog.>=) 150000 THEN
 		RAISE WARNING 'This function is deprecated, changing superuser-reserved GUC is now grantable to roles';
 	END IF;
     IF COALESCE(
@@ -542,7 +542,7 @@ RETURNS VOID LANGUAGE plpgsql
 SET search_path = pg_catalog
 AS $$
 BEGIN
-	IF current_setting('server_version_num')::int >= 150000 THEN
+	IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_catalog.>=) 150000 THEN
 		RAISE WARNING 'This function is deprecated, changing superuser-reserved GUC is now grantable to roles';
 	END IF;
     IF COALESCE(
@@ -577,7 +577,7 @@ $$;
 
 DO $$
 BEGIN
-  IF current_setting('server_version_num')::int < 150000 THEN
+  IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_catalog.<) 150000 THEN
         ALTER FUNCTION aiven_extras.set_pgaudit_parameter(text, text, text) SECURITY DEFINER;
         ALTER FUNCTION aiven_extras.set_pgaudit_role_parameter(text, text, text) SECURITY DEFINER;
   ELSE
