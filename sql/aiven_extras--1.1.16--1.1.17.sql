@@ -495,7 +495,7 @@ RETURNS VOID LANGUAGE plpgsql
 SET search_path = pg_catalog
 AS $$
 BEGIN
-	IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_cattalog.>=) 150000 THEN
+	IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_catalog.>=) 150000 THEN
 		RAISE WARNING 'This function is deprecated, changing superuser-reserved GUC is now grantable to roles';
 	END IF;
     IF COALESCE(
