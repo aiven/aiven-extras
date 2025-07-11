@@ -2,29 +2,20 @@
 #include "fmgr.h"
 #include "funcapi.h"
 #include "miscadmin.h"
-#include "storage/freespace.h"
-#include "storage/smgr.h"
-#if PG_VERSION_NUM >= 160000
-#include "access/relation.h"
-#endif
-#include "access/xloginsert.h"
 #include "access/xlogreader.h"
 #include "access/xlogutils.h"
 #include "replication/logical.h"
-#include "catalog/storage_xlog.h"
 #include "replication/slot.h"
 #include "replication/walreceiver.h"
 #if PG_VERSION_NUM >= 120000 && PG_VERSION_NUM < 130000
 #include "replication/logicalfuncs.h"
 #endif
 #include "utils/pg_lsn.h"
-#include "utils/rel.h"
 
 PG_MODULE_MAGIC;
 
 PG_FUNCTION_INFO_V1(standby_slot_create);
-PG_FUNCTION_INFO_V1(aiven_truncate_freespace_map);
-	Datum
+Datum
 standby_slot_create(PG_FUNCTION_ARGS)
 {
 	Name		name = PG_GETARG_NAME(0);
@@ -148,62 +139,3 @@ standby_slot_create(PG_FUNCTION_ARGS)
 	PG_RETURN_DATUM(result);
 }
 
-
-
-#if PG_VERSION_NUM >= 160000
-Datum
-aiven_truncate_freespace_map(PG_FUNCTION_ARGS)
-{
-	Oid			relid = PG_GETARG_OID(0);
-	Relation	rel;
-	ForkNumber	fork;
-	BlockNumber block;
-
-	rel = relation_open(relid, AccessExclusiveLock);
-
-	/* Only some relkinds have a freespacemap map */
-	if (!RELKIND_HAS_TABLE_AM(rel->rd_rel->relkind))
-		ereport(ERROR,
-				(errcode(ERRCODE_WRONG_OBJECT_TYPE),
-				 errmsg("relation \"%s\" is of wrong relation kind",
-						RelationGetRelationName(rel)),
-				 errdetail_relkind_not_supported(rel->rd_rel->relkind)));
-
-
-	/* Forcibly reset cached file size */
-	RelationGetSmgr(rel)->smgr_cached_nblocks[FSM_FORKNUM] = InvalidBlockNumber;
-
-	/* Just pretend we're going to wipeout the whole rel */
-	block = FreeSpaceMapPrepareTruncateRel(rel, 0);
-
-	if (BlockNumberIsValid(block))
-	{
-		fork = FSM_FORKNUM;
-		smgrtruncate(RelationGetSmgr(rel), &fork, 1, &block);
-	}
-
-	if (RelationNeedsWAL(rel))
-	{
-		xl_smgr_truncate xlrec;
-
-		xlrec.blkno = 0;
-		xlrec.rlocator = rel->rd_locator;
-		xlrec.flags = SMGR_TRUNCATE_FSM;
-
-		XLogBeginInsert();
-		XLogRegisterData((char *) &xlrec, sizeof(xlrec));
-
-		XLogInsert(RM_SMGR_ID, XLOG_SMGR_TRUNCATE | XLR_SPECIAL_REL_UPDATE);
-	}
-
-	relation_close(rel, AccessExclusiveLock);
-
-	PG_RETURN_VOID();
-}
-#else
-Datum
-aiven_truncate_freespace_map(PG_FUNCTION_ARGS)
-{
-	elog(ERROR, "aiven_truncate_freespace_map is not supported on this version.");
-}
-#endif
