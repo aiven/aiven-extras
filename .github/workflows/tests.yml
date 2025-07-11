@@ -16,7 +16,7 @@ jobs:
         repo: ["pgdg"]
         # Define the current dev version to be experimental
         include:
-          - postgresql_version: 17
+          - postgresql_version: 18
             experimental: true
             repo: "pgdg-snapshot"
     steps:
