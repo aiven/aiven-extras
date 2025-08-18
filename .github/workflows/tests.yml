@@ -25,11 +25,11 @@ jobs:
     - name: Install PG
       run: |
         sudo apt update
-        sudo apt install curl ca-certificates gnupg
+        sudo apt install -y curl ca-certificates gnupg
         curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg >/dev/null
         sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-${{ matrix.repo }} main ${{ matrix.postgresql_version }}" > /etc/apt/sources.list.d/pgdg.list'
         sudo apt update
-        sudo apt install postgresql-${{matrix.postgresql_version}} postgresql-contrib-${{matrix.postgresql_version}} postgresql-server-dev-${{matrix.postgresql_version}}
+        sudo apt install -y postgresql-${{matrix.postgresql_version}} postgresql-contrib-${{matrix.postgresql_version}} postgresql-server-dev-${{matrix.postgresql_version}}
 
     - name: Setup cluster
       run: |
