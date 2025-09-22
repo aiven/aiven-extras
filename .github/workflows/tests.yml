@@ -11,12 +11,12 @@ jobs:
       PGUSER: postgres
     strategy:
       matrix:
-        postgresql_version: [12, 13, 14, 15, 16, 17]
+        postgresql_version: [12, 13, 14, 15, 16, 17, 18]
         experimental: [false]
         repo: ["pgdg"]
         # Define the current dev version to be experimental
         include:
-          - postgresql_version: 17
+          - postgresql_version: 18
             experimental: true
             repo: "pgdg-snapshot"
     steps:

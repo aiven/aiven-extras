@@ -630,7 +630,3 @@ AS 'MODULE_PATHNAME', 'standby_slot_create'
 LANGUAGE C;
 
 DROP FUNCTION IF EXISTS aiven_extras.truncate_freespace_map(regclass);
-CREATE FUNCTION aiven_extras.truncate_freespace_map(regclass)
-RETURNS void 
-AS 'MODULE_PATHNAME', 'aiven_truncate_freespace_map'
-LANGUAGE C;
