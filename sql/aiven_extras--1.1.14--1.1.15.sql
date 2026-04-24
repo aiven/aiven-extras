@@ -147,6 +147,10 @@ BEGIN
 
     -- Execute the CREATE SUBSCRIPTION command
     EXECUTE create_subscription_cmd;
+    EXECUTE pg_catalog.format(
+        'ALTER SUBSCRIPTION %I OWNER TO %I',
+        arg_subscription_name, session_user
+    );
 END;
 $$;
 
