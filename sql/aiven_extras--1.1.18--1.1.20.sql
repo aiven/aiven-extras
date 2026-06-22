@@ -62,6 +62,7 @@ CREATE FUNCTION aiven_extras.dblink_record_execute(TEXT, TEXT)
 RETURNS SETOF record LANGUAGE c
 PARALLEL RESTRICTED STRICT
 AS '$libdir/dblink', $$dblink_record$$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.dblink_record_execute(TEXT, TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.dblink_slot_create_or_drop(TEXT, TEXT, TEXT);
@@ -98,6 +99,7 @@ BEGIN
     END IF;
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.dblink_slot_create_or_drop(TEXT, TEXT, TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT);
@@ -112,7 +114,6 @@ CREATE FUNCTION aiven_extras.pg_create_subscription(
     arg_origin TEXT = 'any'
 )
 RETURNS VOID LANGUAGE plpgsql
-SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
 DECLARE
@@ -122,8 +123,11 @@ BEGIN
     -- Get the PostgreSQL version
     SELECT pg_catalog.current_setting('server_version_num')::INT INTO pg_version;
 
-    IF pg_version OPERATOR(pg_catalog.<) 160000 AND arg_origin OPERATOR(pg_catalog.<>) 'any' THEN
-        RAISE EXCEPTION 'PostgreSQL version must be 16 or higher to specify origin other than "any". Current version: %', pg_version;
+    IF pg_version OPERATOR (pg_catalog.>=) 160000 THEN
+        RAISE WARNING 'This function is deprecated, use the standard CREATE SUBSCRIPTION statement instead';
+        IF arg_origin OPERATOR(pg_catalog.<>) 'any' THEN
+            RAISE EXCEPTION 'PostgreSQL version must be 16 or higher to specify origin other than "any". Current version: %', pg_version;
+        END IF;
     END IF;
 
     IF arg_origin OPERATOR(pg_catalog.<>) 'any' AND arg_origin OPERATOR(pg_catalog.<>) 'none' THEN
@@ -156,7 +160,6 @@ CREATE FUNCTION aiven_extras.pg_alter_subscription_disable(
     arg_subscription_name TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
-SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
 BEGIN
@@ -170,7 +173,6 @@ CREATE FUNCTION aiven_extras.pg_alter_subscription_enable(
     arg_subscription_name TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
-SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
 BEGIN
@@ -195,6 +197,7 @@ BEGIN
     );
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) FROM PUBLIC;
 
 DROP FUNCTION IF EXISTS aiven_extras.pg_drop_subscription(TEXT);
 DROP FUNCTION IF EXISTS aiven_extras.pg_drop_subscription(TEXT, BOOLEAN);
@@ -225,6 +228,7 @@ BEGIN
     END IF;
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.pg_drop_subscription(TEXT, BOOLEAN) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.pg_create_publication_for_all_tables(TEXT, TEXT);
@@ -241,6 +245,7 @@ BEGIN
     EXECUTE pg_catalog.format('ALTER PUBLICATION %I OWNER TO %I', arg_publication_name, session_user);
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.pg_create_publication_for_all_tables(TEXT, TEXT) FROM PUBLIC;
 
 DROP FUNCTION IF EXISTS aiven_extras.pg_list_all_subscriptions();
 CREATE FUNCTION aiven_extras.pg_list_all_subscriptions()
@@ -254,6 +259,25 @@ BEGIN
             FROM pg_catalog.pg_subscription;
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.pg_list_all_subscriptions() FROM PUBLIC;
+
+
+DO $$
+BEGIN
+  IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_catalog.<) 160000 THEN
+        ALTER FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT) SECURITY DEFINER;
+        ALTER FUNCTION aiven_extras.pg_alter_subscription_disable(text) SECURITY DEFINER;
+        ALTER FUNCTION aiven_extras.pg_alter_subscription_enable(text) SECURITY DEFINER;
+        REVOKE EXECUTE ON FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT) FROM PUBLIC;
+        REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_disable(text) FROM PUBLIC;
+        REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_enable(text) FROM PUBLIC;
+  ELSE
+        ALTER FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT) SECURITY INVOKER;
+        ALTER FUNCTION aiven_extras.pg_alter_subscription_disable(text) SECURITY INVOKER;
+        ALTER FUNCTION aiven_extras.pg_alter_subscription_enable(text) SECURITY INVOKER;
+  END IF;
+END;
+$$ language plpgsql;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.session_replication_role(TEXT);
@@ -268,6 +292,7 @@ BEGIN
     RETURN pg_catalog.set_config('session_replication_role', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.session_replication_role(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.auto_explain_load();
@@ -280,6 +305,7 @@ BEGIN
     LOAD 'auto_explain';
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.auto_explain_load() FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_analyze(TEXT);
@@ -294,6 +320,7 @@ BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_analyze', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.set_auto_explain_log_analyze(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_format(TEXT);
@@ -308,6 +335,7 @@ BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_format', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.set_auto_explain_log_format(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_min_duration(TEXT);
@@ -322,6 +350,7 @@ BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_min_duration', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.set_auto_explain_log_min_duration(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_timing(TEXT);
@@ -336,6 +365,7 @@ BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_timing', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.set_auto_explain_log_timing(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_buffers(TEXT);
@@ -350,6 +380,7 @@ BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_buffers', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.set_auto_explain_log_buffers(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_verbose(TEXT);
@@ -364,6 +395,7 @@ BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_verbose', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.set_auto_explain_log_verbose(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_auto_explain_log_nested_statements(TEXT);
@@ -378,6 +410,7 @@ BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_nested_statements', arg_parameter, false);
 END
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.set_auto_explain_log_nested_statements(TEXT) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.claim_public_schema_ownership();
@@ -390,6 +423,7 @@ BEGIN
     EXECUTE pg_catalog.format('ALTER SCHEMA public OWNER TO %I', session_user);
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.claim_public_schema_ownership() FROM PUBLIC;
 
 
 -- Temporarily clear out the view so we can replace the function behind it
@@ -431,6 +465,7 @@ BEGIN
             WHERE usename OPERATOR(pg_catalog.=) session_user;
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.pg_stat_replication_list() FROM PUBLIC;
 
 
 CREATE OR REPLACE VIEW aiven_extras.pg_stat_replication AS
@@ -483,6 +518,7 @@ BEGIN
     EXECUTE pg_catalog.format('ALTER PUBLICATION %I OWNER TO %I', arg_publication_name, session_user);
 END;
 $$;
+REVOKE EXECUTE ON FUNCTION aiven_extras.pg_create_publication(TEXT, TEXT, VARIADIC TEXT[]) FROM PUBLIC;
 
 
 DROP FUNCTION IF EXISTS aiven_extras.set_pgaudit_parameter(TEXT, TEXT, TEXT);
@@ -580,6 +616,8 @@ BEGIN
   IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_catalog.<) 150000 THEN
         ALTER FUNCTION aiven_extras.set_pgaudit_parameter(text, text, text) SECURITY DEFINER;
         ALTER FUNCTION aiven_extras.set_pgaudit_role_parameter(text, text, text) SECURITY DEFINER;
+        REVOKE EXECUTE ON FUNCTION aiven_extras.set_pgaudit_parameter(text, text, text) FROM PUBLIC;
+        REVOKE EXECUTE ON FUNCTION aiven_extras.set_pgaudit_role_parameter(text, text, text) FROM PUBLIC;
   ELSE
         ALTER FUNCTION aiven_extras.set_pgaudit_parameter(text, text, text) SECURITY INVOKER;
         ALTER FUNCTION aiven_extras.set_pgaudit_role_parameter(text, text, text) SECURITY INVOKER;
@@ -630,3 +668,5 @@ AS 'MODULE_PATHNAME', 'standby_slot_create'
 LANGUAGE C;
 
 DROP FUNCTION IF EXISTS aiven_extras.truncate_freespace_map(regclass);
+
+GRANT USAGE ON SCHEMA aiven_extras TO PUBLIC;
