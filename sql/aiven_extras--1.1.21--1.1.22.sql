@@ -72,7 +72,7 @@ CREATE FUNCTION aiven_extras.dblink_slot_create_or_drop(
     arg_action TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
     l_clear_search_path TEXT := 'SET search_path TO pg_catalog, pg_temp;';
@@ -114,7 +114,7 @@ CREATE FUNCTION aiven_extras.pg_create_subscription(
     arg_origin TEXT = 'any'
 )
 RETURNS VOID LANGUAGE plpgsql
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
     pg_version INT;
@@ -160,7 +160,7 @@ CREATE FUNCTION aiven_extras.pg_alter_subscription_disable(
     arg_subscription_name TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     EXECUTE pg_catalog.format('ALTER SUBSCRIPTION %I DISABLE', arg_subscription_name);
@@ -173,7 +173,7 @@ CREATE FUNCTION aiven_extras.pg_alter_subscription_enable(
     arg_subscription_name TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     EXECUTE pg_catalog.format('ALTER SUBSCRIPTION %I ENABLE', arg_subscription_name);
@@ -188,7 +188,7 @@ CREATE FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(
 )
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     PERFORM aiven_extras.dblink_record_execute(
@@ -207,7 +207,7 @@ CREATE FUNCTION aiven_extras.pg_drop_subscription(
 )
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
     l_slot_name TEXT;
@@ -238,7 +238,7 @@ CREATE FUNCTION aiven_extras.pg_create_publication_for_all_tables(
 )
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     EXECUTE pg_catalog.format('CREATE PUBLICATION %I FOR ALL TABLES WITH (publish = %I)', arg_publication_name, arg_publish);
@@ -251,7 +251,7 @@ DROP FUNCTION IF EXISTS aiven_extras.pg_list_all_subscriptions();
 CREATE FUNCTION aiven_extras.pg_list_all_subscriptions()
 RETURNS SETOF aiven_extras.aiven_pg_subscription LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN QUERY
@@ -286,7 +286,7 @@ CREATE FUNCTION aiven_extras.session_replication_role(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('session_replication_role', arg_parameter, false);
@@ -299,7 +299,7 @@ DROP FUNCTION IF EXISTS aiven_extras.auto_explain_load();
 CREATE FUNCTION aiven_extras.auto_explain_load()
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     LOAD 'auto_explain';
@@ -314,7 +314,7 @@ CREATE FUNCTION aiven_extras.set_auto_explain_log_analyze(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_analyze', arg_parameter, false);
@@ -329,7 +329,7 @@ CREATE FUNCTION aiven_extras.set_auto_explain_log_format(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_format', arg_parameter, false);
@@ -344,7 +344,7 @@ CREATE FUNCTION aiven_extras.set_auto_explain_log_min_duration(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_min_duration', arg_parameter, false);
@@ -359,7 +359,7 @@ CREATE FUNCTION aiven_extras.set_auto_explain_log_timing(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_timing', arg_parameter, false);
@@ -374,7 +374,7 @@ CREATE FUNCTION aiven_extras.set_auto_explain_log_buffers(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_buffers', arg_parameter, false);
@@ -389,7 +389,7 @@ CREATE FUNCTION aiven_extras.set_auto_explain_log_verbose(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_verbose', arg_parameter, false);
@@ -404,7 +404,7 @@ CREATE FUNCTION aiven_extras.set_auto_explain_log_nested_statements(
 )
 RETURNS TEXT LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN pg_catalog.set_config('auto_explain.log_nested_statements', arg_parameter, false);
@@ -417,7 +417,7 @@ DROP FUNCTION IF EXISTS aiven_extras.claim_public_schema_ownership();
 CREATE FUNCTION aiven_extras.claim_public_schema_ownership()
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     EXECUTE pg_catalog.format('ALTER SCHEMA public OWNER TO %I', session_user);
@@ -454,7 +454,7 @@ DROP FUNCTION IF EXISTS aiven_extras.pg_stat_replication_list();
 CREATE FUNCTION aiven_extras.pg_stat_replication_list()
 RETURNS SETOF aiven_extras.aiven_pg_stat_replication LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
     RETURN QUERY
@@ -483,7 +483,7 @@ CREATE FUNCTION aiven_extras.pg_create_publication(
 )
 RETURNS VOID LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   l_ident TEXT;
@@ -528,7 +528,7 @@ CREATE FUNCTION aiven_extras.set_pgaudit_parameter(
     arg_value TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
 	IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_catalog.>=) 150000 THEN
@@ -575,7 +575,7 @@ CREATE FUNCTION aiven_extras.set_pgaudit_role_parameter(
     arg_value TEXT
 )
 RETURNS VOID LANGUAGE plpgsql
-SET search_path = pg_catalog
+SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
 	IF pg_catalog.current_setting('server_version_num')::int OPERATOR(pg_catalog.>=) 150000 THEN
