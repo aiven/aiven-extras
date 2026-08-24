@@ -53,7 +53,11 @@ standby_slot_create(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 errmsg("must be superuser or replication role to use replication slots")));
 
-	CheckSlotRequirements();
+	CheckSlotRequirements(
+#if PG_VERSION_NUM >= 190000
+		false /* no repack */
+#endif
+	);
 	if (wal_level < WAL_LEVEL_LOGICAL)
 		ereport(ERROR,
 				(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
@@ -97,6 +101,9 @@ standby_slot_create(PG_FUNCTION_ARGS)
 #if PG_VERSION_NUM >= 140000
 			, two_phase
 #endif
+#if PG_VERSION_NUM >= 190000
+			, false /* no repack */
+#endif
 #if PG_VERSION_NUM >= 170000
 			, failover
 			, synced
@@ -112,6 +119,9 @@ standby_slot_create(PG_FUNCTION_ARGS)
 	 */
 	ctx = CreateInitDecodingContext(NameStr(*plugin), NIL,
 			false,	/* just catalogs is OK */
+#if PG_VERSION_NUM >= 190000
+			false,	/* not repack */
+#endif
 			InvalidXLogRecPtr,
 #if PG_VERSION_NUM >= 130000
 			XL_ROUTINE(.page_read = read_local_xlog_page,
