@@ -31,6 +31,11 @@ standby_slot_create(PG_FUNCTION_ARGS)
 	bool		nulls[2];
 	LogicalDecodingContext *ctx = NULL;
 
+	ereport(WARNING,
+			(errcode(ERRCODE_WARNING_DEPRECATED_FEATURE),
+			 errmsg("aiven_extras.pg_create_logical_replication_slot_on_standby "
+					"is deprecated and will be removed in a future release")));
+
 	if(!RecoveryInProgress())
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),

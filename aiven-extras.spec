@@ -42,10 +42,12 @@ mkdir -p %{buildroot}/usr/share/licenses/aiven-extras-%{pgmajorversion}
 /usr/share/licenses/aiven-extras-%{pgmajorversion}/
 
 %defattr(644,root,root,755)
+%if %{pgmajorversion} < 19
 %{pginstdir}/lib/%{extname}.so
+%endif
 %{pginstdir}/share/extension/%{extname}--*.sql
 %{pginstdir}/share/extension/%{extname}.control
-%if %{pgmajorversion} >= 11 && %{pgmajorversion} < 90
+%if %{pgmajorversion} >= 11 && %{pgmajorversion} < 19
  %if 0%{?rhel} && 0%{?rhel} <= 6
  %else
  %{pginstdir}/lib/bitcode/%{extname}*.bc
