@@ -13,6 +13,8 @@ Please note that when loading the `auto_explain` extension, it is loaded for the
 Installation
 ============
 
+PostgreSQL 13 through 19 is supported.
+
 To create the Aiven extras extension, run the following after connecting to the database you wish to enable it in:
 
 ```sql
