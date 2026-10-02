@@ -91,6 +91,10 @@ SELECT * FROM aiven_extras.pg_alter_subscription_enable('subscription');
 SELECT * FROM aiven_extras.pg_alter_subscription_refresh_publication('subscription', FALSE);
 ```
 
+`pg_alter_subscription_refresh_publication` runs `ALTER SUBSCRIPTION … REFRESH PUBLICATION` in the
+calling session (not via `dblink`). Use it as a top-level statement: do not wrap it in `BEGIN`/`COMMIT`
+or in your own function that may fail afterward.
+
 **Configuring auto-explain:**
 
 For details, refer to [PostgreSQL's documentation](https://www.postgresql.org/docs/current/auto-explain.html), but note that arguments for the exposed functions are of type `text`. Also note that currently `aiven_extras` implements a subset of the available functions.
@@ -124,6 +128,18 @@ Aiven extras extension was created by Hannu Valtonen <hannu.valtonen@aiven.io> f
 Recent contributors are listed on the GitHub project page,
 https://github.com/aiven/aiven-extras/graphs/contributors
 
+
+Releases
+========
+
+When bumping the extension version in the `Makefile` (`short_ver` / `last_ver`):
+
+* `sql/aiven_extras.sql` is the source of truth for a fresh `CREATE EXTENSION`.
+* `make` copies it to `sql/aiven_extras--<short_ver>.sql` (the new default install script).
+* The step from the previous release must be a **hand-written** file
+  `sql/aiven_extras--<last_ver>--<short_ver>.sql` containing only the DDL needed to upgrade
+  existing databases. It is **not** generated from `sql/aiven_extras.sql` (older releases sometimes
+  committed a full copy of the install script for that path).
 
 Contact
 =======

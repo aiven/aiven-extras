@@ -191,10 +191,15 @@ SECURITY DEFINER
 SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
-    PERFORM aiven_extras.dblink_record_execute(
-        pg_catalog.format('user=%L dbname=%L port=%L', current_user, pg_catalog.current_database(), (SELECT setting FROM pg_catalog.pg_settings WHERE name OPERATOR(pg_catalog.=) 'port')),
-        pg_catalog.format('ALTER SUBSCRIPTION %I REFRESH PUBLICATION WITH (copy_data=%s)', arg_subscription_name, arg_copy_data::TEXT)
-    );
+    -- aiven_extras.subscription_refresh() is STRICT, so reject NULL arguments
+    -- explicitly instead of silently doing nothing.
+    IF arg_subscription_name IS NULL THEN
+        RAISE EXCEPTION 'arg_subscription_name must not be NULL';
+    END IF;
+    IF arg_copy_data IS NULL THEN
+        RAISE EXCEPTION 'arg_copy_data must not be NULL';
+    END IF;
+    PERFORM aiven_extras.subscription_refresh(arg_subscription_name, arg_copy_data);
 END;
 $$;
 REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) FROM PUBLIC;
@@ -666,6 +671,17 @@ CREATE FUNCTION aiven_extras.pg_create_logical_replication_slot_on_standby(
 	OUT slot_name name, OUT lsn pg_lsn)
 AS 'MODULE_PATHNAME', 'standby_slot_create'
 LANGUAGE C;
+
+-- Internal helper for aiven_extras.pg_alter_subscription_refresh_publication().
+-- Not granted to anyone: it is only called by that SECURITY DEFINER wrapper.
+DROP FUNCTION IF EXISTS aiven_extras.subscription_refresh(TEXT, BOOLEAN);
+CREATE FUNCTION aiven_extras.subscription_refresh(
+	arg_subscription_name TEXT,
+	arg_copy_data BOOLEAN)
+RETURNS VOID
+AS 'MODULE_PATHNAME', 'subscription_refresh'
+LANGUAGE C STRICT;
+REVOKE EXECUTE ON FUNCTION aiven_extras.subscription_refresh(TEXT, BOOLEAN) FROM PUBLIC;
 
 DROP FUNCTION IF EXISTS aiven_extras.truncate_freespace_map(regclass);
 
