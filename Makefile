@@ -1,9 +1,8 @@
-short_ver = 1.1.22
-last_ver = 1.1.21
+short_ver = 1.1.23
+last_ver = 1.1.22
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 generated = aiven_extras.control \
-			sql/aiven_extras--$(short_ver).sql \
-			sql/aiven_extras--$(last_ver)--$(short_ver).sql
+			sql/aiven_extras--$(short_ver).sql
 
 # for downstream packager
 RPM_MINOR_VERSION_SUFFIX ?=
@@ -11,7 +10,7 @@ RPM_MINOR_VERSION_SUFFIX ?=
 # Extension packaging
 EXTENSION = aiven_extras
 MODULE_big = aiven_extras
-OBJS = src/aiven_extras.o
+OBJS = src/aiven_extras.o src/aiven-extras-subscription_refresh.o
 PG_CONFIG ?= pg_config
 DATA = $(filter-out $(generated),$(wildcard sql/*--*.sql))
 DATA_built = $(generated)
@@ -23,7 +22,7 @@ EXTRA_CLEAN = aiven_extras.control aiven-extras-rpm-src.tar
 
 include $(PGXS)
 
-rpm: rpm-12 rpm-13 rpm-14 rpm-15 rpm-16 rpm-17 rpm-18 rpm-19
+rpm: rpm-13 rpm-14 rpm-15 rpm-16 rpm-17 rpm-18 rpm-19
 
 aiven_extras.control: aiven_extras.control.in
 	mkdir -p $(@D)
@@ -33,9 +32,7 @@ sql/aiven_extras--$(short_ver).sql: sql/aiven_extras.sql
 	mkdir -p $(@D)
 	cp -fp $^ $@
 
-sql/aiven_extras--$(last_ver)--$(short_ver).sql: sql/aiven_extras.sql
-	mkdir -p $(@D)
-	cp -fp $^ $@
+# Upgrade scripts are maintained separately and installed through DATA.
 
 ifeq ("$(wildcard sql/aiven_extras--*--$(last_ver).sql)","")
 	@echo "ERROR: missing upgrade script to last version (sql/aiven_extras--*--$(last_ver).sql)"
