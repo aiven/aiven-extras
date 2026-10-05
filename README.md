@@ -91,6 +91,10 @@ SELECT * FROM aiven_extras.pg_alter_subscription_enable('subscription');
 SELECT * FROM aiven_extras.pg_alter_subscription_refresh_publication('subscription', FALSE);
 ```
 
+`pg_alter_subscription_refresh_publication` runs `ALTER SUBSCRIPTION … REFRESH PUBLICATION` in the
+calling session (not via `dblink`). Use it as a top-level statement: do not wrap it in `BEGIN`/`COMMIT`
+or in your own function that may fail afterward.
+
 **Configuring auto-explain:**
 
 For details, refer to [PostgreSQL's documentation](https://www.postgresql.org/docs/current/auto-explain.html), but note that arguments for the exposed functions are of type `text`. Also note that currently `aiven_extras` implements a subset of the available functions.
