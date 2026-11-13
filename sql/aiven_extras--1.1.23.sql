@@ -186,17 +186,10 @@ CREATE FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(
     arg_subscription_name TEXT,
     arg_copy_data BOOLEAN = TRUE
 )
-RETURNS VOID LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, pg_temp
-AS $$
-BEGIN
-    PERFORM aiven_extras.dblink_record_execute(
-        pg_catalog.format('user=%L dbname=%L port=%L', current_user, pg_catalog.current_database(), (SELECT setting FROM pg_catalog.pg_settings WHERE name OPERATOR(pg_catalog.=) 'port')),
-        pg_catalog.format('ALTER SUBSCRIPTION %I REFRESH PUBLICATION WITH (copy_data=%s)', arg_subscription_name, arg_copy_data::TEXT)
-    );
-END;
-$$;
+RETURNS VOID
+AS 'MODULE_PATHNAME', 'subscription_refresh'
+LANGUAGE C
+SET search_path = pg_catalog, pg_temp;
 REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) FROM PUBLIC;
 
 DROP FUNCTION IF EXISTS aiven_extras.pg_drop_subscription(TEXT);
@@ -268,13 +261,16 @@ BEGIN
         ALTER FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT) SECURITY DEFINER;
         ALTER FUNCTION aiven_extras.pg_alter_subscription_disable(text) SECURITY DEFINER;
         ALTER FUNCTION aiven_extras.pg_alter_subscription_enable(text) SECURITY DEFINER;
+        ALTER FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) SECURITY DEFINER;
         REVOKE EXECUTE ON FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT) FROM PUBLIC;
         REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_disable(text) FROM PUBLIC;
         REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_enable(text) FROM PUBLIC;
+        REVOKE EXECUTE ON FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) FROM PUBLIC;
   ELSE
         ALTER FUNCTION aiven_extras.pg_create_subscription(TEXT, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN, TEXT) SECURITY INVOKER;
         ALTER FUNCTION aiven_extras.pg_alter_subscription_disable(text) SECURITY INVOKER;
         ALTER FUNCTION aiven_extras.pg_alter_subscription_enable(text) SECURITY INVOKER;
+        ALTER FUNCTION aiven_extras.pg_alter_subscription_refresh_publication(TEXT, BOOLEAN) SECURITY INVOKER;
   END IF;
 END;
 $$ language plpgsql;
